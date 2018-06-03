@@ -9,5 +9,15 @@
 #import "SharedSubIngredientType.h"
 
 @implementation SharedSubIngredientType
+@synthesize subIngredientTypeList;
 
++(SharedSubIngredientType *)sharedSubIngredientType {
+    static dispatch_once_t pred;
+    static SharedSubIngredientType *shared = nil;
+    dispatch_once(&pred, ^{
+        shared = [[SharedSubIngredientType alloc] init];
+        shared.subIngredientTypeList = [[NSMutableArray alloc]init];
+    });
+    return shared;
+}
 @end

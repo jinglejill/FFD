@@ -9,5 +9,8 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedOrderCancelDiscount : NSObject
+@property (retain, nonatomic) NSMutableArray *orderCancelDiscountList;
+
++ (SharedOrderCancelDiscount *)sharedOrderCancelDiscount;
 
 @end

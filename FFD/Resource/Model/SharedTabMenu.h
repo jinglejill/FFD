@@ -9,5 +9,7 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedTabMenu : NSObject
+@property (retain, nonatomic) NSMutableArray *tabMenuList;
 
++ (SharedTabMenu *)sharedTabMenu;
 @end

@@ -7,26 +7,36 @@
 //
 
 #import "LaunchWithLogoViewController.h"
+#import "BranchSelectViewController.h"
+#import "LogInViewController.h"
 #import "ChristmasConstants.h"
 #import "KeychainWrapper.h"
 #import "Utility.h"
 #import "PushSync.h"
 #import "Credentials.h"
+#import "CredentialsDb.h"
 #import "Device.h"
 #import "Message.h"
+#import <sys/utsname.h>
+#include "TargetConditionals.h"
 
 
-extern NSArray *globalMessage;
+
+//extern NSArray *globalMessage;
 @interface LaunchWithLogoViewController ()
 {
-//    HomeModel *self.homeModel;
     UIActivityIndicatorView *indicator;
     UIView *overlayView;
+    HomeModel *_homeModel;
+    NSMutableArray *_credentialsDbList;
+    CredentialsDb *_credentialsDb;
 }
 @end
 
 @implementation LaunchWithLogoViewController
 @synthesize progressBar;
+@synthesize imgLogo;
+
 
 - (void)presentAlertViewForPassword
 {
@@ -37,54 +47,16 @@ extern NSArray *globalMessage;
     // 2
     if (hasPin)
     {
-        [self downloadData];
+        //download branch
+        _homeModel = [[HomeModel alloc]init];
+        _homeModel.delegate = self;
+        [_homeModel downloadItems:dbCredentialsDb withData:[[NSUserDefaults standardUserDefaults] stringForKey:USERNAME]];
+
+        
+        //        [self downloadData];
     }
     else
     {
-//        UIAlertController* alertController = [UIAlertController alertControllerWithTitle:@"Setup Credentials"
-//                                                                       message:@""
-//                                                                preferredStyle:UIAlertControllerStyleAlert];
-//        [alertController addTextFieldWithConfigurationHandler:^(UITextField *textField) {
-//            textField.placeholder = @"Name";
-//            textField.textColor = [UIColor blueColor];
-//            textField.clearButtonMode = UITextFieldViewModeWhileEditing;
-//            textField.borderStyle = UITextBorderStyleRoundedRect;
-//            textField.autocapitalizationType = UITextAutocapitalizationTypeWords;
-//            textField.delegate = self;
-//            textField.tag = kTextFieldName;
-//        }];
-//        [alertController addTextFieldWithConfigurationHandler:^(UITextField *textField) {
-//            textField.placeholder = @"Password";
-//            textField.textColor = [UIColor blueColor];
-//            textField.clearButtonMode = UITextFieldViewModeWhileEditing;
-//            textField.borderStyle = UITextBorderStyleRoundedRect;
-//            textField.secureTextEntry = YES;
-//            textField.delegate = self;
-//            textField.tag = kTextFieldPassword;
-//        }];
-//        
-//        UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"Done" style:UIAlertActionStyleDefault
-//                                                              handler:^(UIAlertAction * action)
-//                                                              {
-//                                                                  [self credentialsValidated];
-//                                                              }];
-//        UIAlertAction* cancelAction = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleDefault
-//                                                             handler:^(UIAlertAction * action)
-//                                                             {
-//                                                                 [self presentAlertViewForPassword];
-//                                                             }];
-//        
-//        
-//        [alertController addAction:defaultAction];
-//        [alertController addAction:cancelAction];
-//        
-//        
-//        [self presentViewController:alertController animated:YES completion:nil];
-        
-        
-        
-        
-
         UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Setup Credentials"
                                                         message:@""
                                                        delegate:self
@@ -159,7 +131,9 @@ extern NSArray *globalMessage;
     Credentials *credentials = [[Credentials alloc]init];
     credentials.username = name;
     credentials.password = password;
-    [self.homeModel updateItems:dbCredentials withData:credentials actionScreen:@"Validate credential"];
+    _homeModel = [[HomeModel alloc]init];
+    _homeModel.delegate = self;
+    [_homeModel insertItems:dbCredentials withData:credentials actionScreen:@"Validate credential"];
 }
 
 - (void)itemsUpdated:(NSString *)alertText//if error
@@ -180,29 +154,31 @@ extern NSArray *globalMessage;
     } );
 }
 
-- (void)itemsUpdated//if not error
+-(void)viewDidLayoutSubviews
 {
-    if(self.homeModel.propCurrentDB == dbCredentials)
-    {
-        [[NSUserDefaults standardUserDefaults] setBool:YES forKey:PIN_SAVED];
-        
-        
-        if([Utility dbName])
-        {
-            Device *device = [[Device alloc]init];
-            device.deviceToken = [Utility deviceToken];
-            [self.homeModel insertItems:dbDevice withData:device actionScreen:@"Add device in Launching screen"];
-        }
-    }
+    [super viewDidLayoutSubviews];
     
-    [self removeOverlayViews];
-    [self loadViewProcess];
+    CGRect frame = imgLogo.frame;
+    frame.size.width = frame.size.height*imgLogo.image.size.width/imgLogo.image.size.height;
+    imgLogo.frame = frame;
 }
 
 - (void)loadView
 {
     [super loadView];
+    NSLog(@"test screen size %f,%f",self.view.frame.size.width,self.view.frame.size.height);
+    _homeModel = [[HomeModel alloc]init];
+    _homeModel.delegate = self;
+    NSLog(@"%@",[[NSUserDefaults standardUserDefaults] stringForKey:USERNAME]);//db
     
+    {
+        overlayView = [[UIView alloc] initWithFrame:self.view.frame];
+        overlayView.backgroundColor = [UIColor colorWithRed:256 green:256 blue:256 alpha:0];
+        
+        
+        indicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+        indicator.frame = CGRectMake(self.view.bounds.size.width/2-indicator.frame.size.width/2,self.view.bounds.size.height/2-indicator.frame.size.height/2,indicator.frame.size.width,indicator.frame.size.height);
+    }
     
     [self presentAlertViewForPassword];
 }
@@ -210,32 +186,6 @@ extern NSArray *globalMessage;
 - (void)loadViewProcess
 {
     [self presentAlertViewForPassword];
-}
-
-- (void)downloadData
-{
-    NSMutableArray *arrItemMessage = [[NSMutableArray alloc] init];
-    
-    
-    
-    NSArray *jsonArrayMessage = @[@{@"EnumNo":@"0",@"EnumKey":@"skipMessage1",@"Message":@"-",@"ModifiedDate":@"2015-07-30 15:34:31"},@{@"EnumNo":@"1",@"EnumKey":@"incorrectPasscode",@"Message":@"Incorrect passcode",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"2",@"EnumKey":@"skipMessage2",@"Message":@"-",@"ModifiedDate":@"2015-07-30 15:34:48"},@{@"EnumNo":@"3",@"EnumKey":@"emailSubjectAdd",@"Message":@"Minimalist - your username and password",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"4",@"EnumKey":@"emailBodyAdd",@"Message":@"Your username is %@<br>Your password is %@",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"5",@"EnumKey":@"emailSubjectReset",@"Message":@"Minimalist - you request a new password",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"6",@"EnumKey":@"emailBodyReset",@"Message":@"Your username is %@<br>Your password is %@",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"7",@"EnumKey":@"emailInvalid",@"Message":@"Email address is invalid.",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"8",@"EnumKey":@"emailExisted",@"Message":@"This email address has already existed.",@"ModifiedDate":@"2015-08-11 11:22:52"},@{@"EnumNo":@"9",@"EnumKey":@"wrongEmail",@"Message":@"Wrong registered email",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"10",@"EnumKey":@"wrongPassword",@"Message":@"Wrong old password",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"11",@"EnumKey":@"newPasswordNotMatch",@"Message":@"New passwords do not match.",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"12",@"EnumKey":@"changePasswordSuccess",@"Message":@"Your password has been changed successfully.",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"13",@"EnumKey":@"emailSubjectChangePassword",@"Message":@"Minimalist - Your password has been changed successfully.",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"14",@"EnumKey":@"emailBodyChangePassword",@"Message":@"Your username is %@<br>Your password is %@",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"15",@"EnumKey":@"newPasswordEmpty",@"Message":@"New password cannot be empty.",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"16",@"EnumKey":@"passwordEmpty",@"Message":@"Password cannot be empty.",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"17",@"EnumKey":@"passwordChanged",@"Message":@"Password has changed.",@"ModifiedDate":@"2015-08-11 11:23:49"},@{@"EnumNo":@"18",@"EnumKey":@"emailSubjectForgotPassword",@"Message":@"Minimalist - Your password is reset.",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"19",@"EnumKey":@"emailBodyForgotPassword",@"Message":@"Your username is %@<br>Your password is %@",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"20",@"EnumKey":@"forgotPasswordReset",@"Message":@"Mail sent",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"21",@"EnumKey":@"forgotPasswordMailSent",@"Message":@"Mail sent successfully",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"22",@"EnumKey":@"locationEmpty",@"Message":@"Location cannot be empty.",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"23",@"EnumKey":@"periodFromEmpty",@"Message":@"Period From cannot be empty.",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"24",@"EnumKey":@"periodToEmpty",@"Message":@"Period To cannot be empty.",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"25",@"EnumKey":@"deleteSubject",@"Message":@"Confirm delete",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"26",@"EnumKey":@"confirmDeleteUserAccount",@"Message":@"Delete user account",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"27",@"EnumKey":@"confirmDeleteEvent",@"Message":@"Delete event",@"ModifiedDate":@"0000-00-00 00:00:00"},@{@"EnumNo":@"28",@"EnumKey":@"periodToLessThanPeriodFrom",@"Message":@"Period to is less than Period from.",@"ModifiedDate":@"2015-07-27 01:01:50"},@{@"EnumNo":@"29",@"EnumKey":@"noEventChosenSubject",@"Message":@"No event chosen",@"ModifiedDate":@"2015-08-09 17:31:47"},@{@"EnumNo":@"30",@"EnumKey":@"noEventChosenDetail",@"Message":@"No event chosen, create event in Event menu",@"ModifiedDate":@"2015-08-09 17:31:47"},@{@"EnumNo":@"31",@"EnumKey":@"codeMismatch",@"Message":@"Code mismatch",@"ModifiedDate":@"2015-08-10 18:36:13"},@{@"EnumNo":@"32",@"EnumKey":@"passwordIncorrect",@"Message":@"Incorrect password",@"ModifiedDate":@"2015-08-10 20:46:06"},@{@"EnumNo":@"33",@"EnumKey":@"EmailIncorrect",@"Message":@"Incorrect email",@"ModifiedDate":@"2015-08-11 11:05:00"}];
-    
-    for (int i = 0; i < jsonArrayMessage.count; i++)
-    {
-        NSDictionary *jsonElement = jsonArrayMessage[i];
-        
-        InAppMessage *message = [[InAppMessage alloc] init];
-        message.enumNo = jsonElement[@"EnumNo"];
-        message.enumKey = jsonElement[@"EnumKey"];
-        message.message = jsonElement[@"Message"];
-        message.modifiedDate = jsonElement[@"ModifiedDate"];
-        
-        [arrItemMessage addObject:message];
-    }
-    globalMessage = arrItemMessage;
-    
-    
-    [self.homeModel downloadItems:dbMasterWithProgressBar];
 }
 
 - (void)applicationExpired
@@ -256,48 +206,120 @@ extern NSArray *globalMessage;
     } );
     return;
 }
+
 - (void)downloadProgress:(float)percent
 {
     progressBar.progress = percent;
-    //    NSLog([NSString stringWithFormat:@"%f",percent]);
 }
--(void)itemsDownloaded:(NSArray *)items
+
+-(void)itemsInserted
 {
-    if([items count] == 0)
+    if(_homeModel.propCurrentDBInsert == dbCredentials)
     {
-        UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"Warning"
-                                                                       message:@"Memory fail"
-                                                                preferredStyle:UIAlertControllerStyleAlert];
-        
-        UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
-                                                              handler:^(UIAlertAction * action)
-                                        {
-                                            
-                                        }];
-        
-        [alert addAction:defaultAction];
-        dispatch_async(dispatch_get_main_queue(),^ {
-            [self presentViewController:alert animated:YES completion:nil];
-        } );
-        return;
+        [[NSUserDefaults standardUserDefaults] setBool:YES forKey:PIN_SAVED];
+        [self presentAlertViewForPassword];
     }
-
+    else if(_homeModel.propCurrentDBInsert == dbDevice)
     {
-        PushSync *pushSync = [[PushSync alloc]init];
-        pushSync.deviceToken = [Utility deviceToken];
-        [self.homeModel updateItems:dbPushSyncUpdateByDeviceToken withData:pushSync actionScreen:@"update synced time by device token"];
+        [self downloadData];
     }
-    
-    
-    [Utility itemsDownloaded:items];
-    
-    [Utility setFinishLoadSharedData:YES];
-    dispatch_async(dispatch_get_main_queue(),^ {
-        [self performSegueWithIdentifier:@"segSignIn" sender:self];
-    } );
 }
 
-- (void)viewDidLoad {
+- (void)downloadData
+{
+    _homeModel = [[HomeModel alloc]init];
+    _homeModel.delegate = self;
+    [_homeModel downloadItems:dbMasterWithProgressBar];
+}
+
+- (void)itemsDownloaded:(NSArray *)items
+{
+    if(_homeModel.propCurrentDB == dbCredentialsDb)
+    {
+        [self removeOverlayViews];
+        _credentialsDbList = items[0];
+        
+        
+        if([_credentialsDbList count]==1)
+        {
+            _credentialsDb = _credentialsDbList[0];
+            [Utility setBranchID:_credentialsDb.branchID];
+            [[NSUserDefaults standardUserDefaults] setValue:[[NSUserDefaults standardUserDefaults] stringForKey:USERNAME] forKey:BRANCH];
+            [[NSUserDefaults standardUserDefaults] synchronize];
+            
+            
+            
+            //insert device for pushNotification to update data in the same branch, so delete deviceToken that stay in other db(เพราะได้ switch มาใช้ branch นี้แล้ว)
+            Device *device = [[Device alloc]init];
+            device.deviceToken = [Utility deviceToken];
+            device.remark = [self deviceName];
+            _homeModel = [[HomeModel alloc]init];
+            _homeModel.delegate = self;
+            [_homeModel insertItems:dbDevice withData:device actionScreen:@"Add device in branchSelect screen"];
+            
+        }
+        else
+        {
+            [self performSegueWithIdentifier:@"segBranchSelect" sender:self];
+        }
+    }
+    else if(_homeModel.propCurrentDB == dbMasterWithProgressBar)
+    {
+        if([items count] == 0)
+        {
+            UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"Warning"
+                                                                           message:@"Memory fail"
+                                                                    preferredStyle:UIAlertControllerStyleAlert];
+            
+            UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
+                                                                  handler:^(UIAlertAction * action)
+                                            {
+                                                
+                                            }];
+            
+            [alert addAction:defaultAction];
+            dispatch_async(dispatch_get_main_queue(),^ {
+                [self presentViewController:alert animated:YES completion:nil];
+            } );
+            return;
+        }
+        
+        {
+            PushSync *pushSync = [[PushSync alloc]init];
+            pushSync.deviceToken = [Utility deviceToken];
+            _homeModel = [[HomeModel alloc]init];
+            _homeModel.delegate = self;
+            [_homeModel updateItems:dbPushSyncUpdateByDeviceToken withData:pushSync actionScreen:@"update synced time by device token"];
+        }
+        
+        
+        
+        [Utility itemsDownloaded:items];
+        [self removeOverlayViews];//อาจ มีการเรียกจากหน้า customViewController
+        
+        
+        
+        [Utility setFinishLoadSharedData:YES];
+        [self performSegueWithIdentifier:@"segSignIn" sender:self];
+    }
+}
+
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
+{
+    if([[segue identifier] isEqualToString:@"segBranchSelect"])
+    {
+        BranchSelectViewController *vc = segue.destinationViewController;
+        vc.credentialsDbList = _credentialsDbList;
+    }
+    else if([[segue identifier] isEqualToString:@"segSignIn"])
+    {
+        LogInViewController *vc = segue.destinationViewController;
+        vc.credentialsDb = _credentialsDb;
+    }
+}
+
+- (void)viewDidLoad
+{
     [super viewDidLoad];
     // Do any additional setup after loading the view.
     
@@ -319,5 +341,118 @@ extern NSArray *globalMessage;
     [self.view addSubview:progressBar];
 }
 
+-(void) loadingOverlayView
+{
+    [indicator startAnimating];
+    indicator.layer.zPosition = 1;
+    indicator.alpha = 1;
+    
+    
+    // and just add them to navigationbar view
+    [self.view addSubview:overlayView];
+    [self.view addSubview:indicator];
+}
+
+-(void) removeOverlayViews{
+    UIView *view = overlayView;
+    
+    [UIView animateWithDuration:0.5
+                     animations:^{
+                         view.alpha = 0.0;
+                         indicator.alpha = 0;
+                     }
+                     completion:^(BOOL finished){
+                         dispatch_async(dispatch_get_main_queue(),^ {
+                             [view removeFromSuperview];
+                             [indicator stopAnimating];
+                             [indicator removeFromSuperview];
+                         } );
+                     }
+     ];
+}
+
+- (void) connectionFail
+{
+    UIAlertController* alert = [UIAlertController alertControllerWithTitle:[Utility subjectNoConnection]
+                                                                   message:[Utility detailNoConnection]
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    
+    UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
+                                                          handler:^(UIAlertAction * action)
+                                    {                                        
+                                        if(![indicator isAnimating])
+                                        {
+                                            [self loadingOverlayView];
+                                        }
+                                        _homeModel = [[HomeModel alloc]init];
+                                        _homeModel.delegate = self;
+                                        [_homeModel downloadItems:dbMaster];
+                                    }];
+    
+    [alert addAction:defaultAction];
+    dispatch_async(dispatch_get_main_queue(),^ {
+        [self presentViewController:alert animated:YES completion:nil];
+    } );
+}
+
+- (void)itemsFail
+{
+    UIAlertController* alert = [UIAlertController alertControllerWithTitle:[Utility getConnectionLostTitle]
+                                                                   message:[Utility getConnectionLostMessage]
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    
+    UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
+                                                          handler:^(UIAlertAction * action) {
+                                                              if(![indicator isAnimating])
+                                                              {
+                                                                  [self loadingOverlayView];
+                                                              }
+                                                              _homeModel = [[HomeModel alloc]init];
+                                                              _homeModel.delegate = self;
+                                                              [_homeModel downloadItems:dbMaster];
+                                                          }];
+    
+    [alert addAction:defaultAction];
+    dispatch_async(dispatch_get_main_queue(),^ {
+        [self presentViewController:alert animated:YES completion:nil];
+    } );
+}
+
+- (void)alertMsg:(NSString *)msg
+{
+    UIAlertController* alert = [UIAlertController alertControllerWithTitle:@""
+                                                                   message:msg
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    
+    UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
+                                                          handler:^(UIAlertAction * action)
+                                    {
+                                        [self presentAlertViewForPassword];
+                                    }];
+    
+    [alert addAction:defaultAction];
+    [self presentViewController:alert animated:YES completion:nil];
+    
+}
+
+-(void)itemsUpdated
+{
+    
+}
+
+-(NSString*) deviceName
+{
+    struct utsname systemInfo;
+    uname(&systemInfo);
+    
+    
+    NSString *iOSDeviceModelsPath = [[NSBundle mainBundle] pathForResource:@"iOSDeviceModelMapping" ofType:@"plist"];
+    NSDictionary *iOSDevices = [NSDictionary dictionaryWithContentsOfFile:iOSDeviceModelsPath];
+    
+    NSString* deviceModel = [NSString stringWithCString:systemInfo.machine
+                                               encoding:NSUTF8StringEncoding];
+    
+    return [iOSDevices valueForKey:deviceModel];
+}
 
 @end

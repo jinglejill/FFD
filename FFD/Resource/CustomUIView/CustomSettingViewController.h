@@ -9,5 +9,7 @@
 #import "CustomViewController.h"
 
 @interface CustomSettingViewController : CustomViewController
+@property (nonatomic) enum settingGroup settingGroup;
 
+- (void)unwindToSettingDetail;
 @end

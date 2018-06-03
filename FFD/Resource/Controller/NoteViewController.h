@@ -7,7 +7,18 @@
 //
 
 #import "CustomViewController.h"
+#import "OrderTakingViewController.h"
+#import "OrderTaking.h"
 
-@interface NoteViewController : CustomViewController
+
+@interface NoteViewController : CustomViewController<UICollectionViewDataSource,UICollectionViewDelegate,UICollectionViewDelegateFlowLayout>
+@property (strong, nonatomic) NSMutableArray *noteList;
+@property (strong, nonatomic) OrderTaking *orderTaking;
+@property (strong, nonatomic) OrderTakingViewController *vc;
+@property (strong, nonatomic) IBOutlet UICollectionView *colVwNote;
+@property (strong, nonatomic) IBOutlet UIButton *btnConfirm;
+@property (strong, nonatomic) IBOutlet UIButton *btnCancel;
+- (IBAction)confirmNote:(id)sender;
+- (IBAction)cancelNote:(id)sender;
 
 @end

@@ -7,7 +7,17 @@
 //
 
 #import "CustomViewController.h"
+#import "SetUpMenuTypePrintViewController.h"
+#import "Printer.h"
+#import "ConfirmAndCancelView.h"
 
-@interface MenuTypeListViewController : CustomViewController
+
+@interface MenuTypeListViewController : CustomViewController<UITableViewDelegate,UITableViewDataSource>
+@property (strong, nonatomic) IBOutlet UITableView *tbvMenuType;
+@property (strong, nonatomic) ConfirmAndCancelView *vwConfirmAndCancel;
+@property (strong, nonatomic) SetUpMenuTypePrintViewController *vc;
+@property (strong, nonatomic) Printer *selectedPrinter;
+
+
 
 @end

@@ -9,5 +9,7 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedDistrict : NSObject
+@property (retain, nonatomic) NSMutableArray *districtList;
 
++ (SharedDistrict *)sharedDistrict;
 @end

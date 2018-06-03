@@ -7,7 +7,11 @@
 //
 
 #import "CustomViewController.h"
+#import "SettingDetailViewController.h"
 
-@interface SettingListViewController : CustomViewController
+
+@interface SettingListViewController : CustomViewController<UITableViewDelegate,UITableViewDataSource>
+
+@property (strong, nonatomic) IBOutlet UITableView *tbvSettingNameList;
 
 @end

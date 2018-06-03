@@ -9,5 +9,7 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedPrinter : NSObject
+@property (retain, nonatomic) NSMutableArray *printerList;
 
++ (SharedPrinter *)sharedPrinter;
 @end

@@ -4,16 +4,16 @@
     <HEAD>
         <style>
             body {
-                font: normal 31px 'Helvetica', sans-serif,Verdana;
+                font: normal 25px 'Helvetica', sans-serif,Verdana;
             }
-                    </style>
+        </style>
         
-            </HEAD>
+    </HEAD>
     <BODY>
         <table width="100%">
             <tbody>
                 <tr>
-                    <td style="text-align: center;"><img height="200px" src="http://www.jinglejill.com/FFD/MAMALIN/Image/mamarinReceiptLogo.png"/> </td>
+                    <td style="text-align: center;"><img height="250px" src="http://jinglejill.com/ffd/MAMARIN4/image/mamarinReceiptLogo2.png"/> </td>
                 </tr>
                 <tr>
                     <td style="text-align: center;"><strong>#RESTAURANT_NAME#</strong></td>
@@ -59,15 +59,15 @@
                     <td style="border-top: 1px solid #000000;">จำนวนรวม:&nbsp;#TOTAL_QUANTITY#</td>
                     <td style="border-top: 1px solid #000000; text-align: right;">#SUB_TOTAL_AMOUNT#</td>
                 </tr>
-                <tr>
+                <tr #HIDE#>
                     <td>ส่วนลด</td>
                     <td style="text-align: right;">#DISCOUNT_AMOUNT#</td>
                 </tr>
-                <tr>
+                <tr #HIDE#>
                     <td>คงเหลือ</td>
                     <td style="text-align: right;">#AFTER_DISCOUNT_AMOUNT#</td>
                 </tr>
-                <tr>
+                <tr style="display:none">
                     <td>ค่าบริการ 10%</td>
                     <td style="text-align: right;">#SERVICE_CHARGE_AMOUNT#</td>
                 </tr>
@@ -82,7 +82,7 @@
                 <tr>
                     <td>รวมชำระ</td>
                     <td style="text-align: right;"><strong>#TOTAL_AMOUNT#</strong></td>
-                </tr>                
+                </tr>
                 <tr>
                     <td style="border-top: 1px solid #000000;">รหัสสมาชิก</td>
                     <td style="border-top: 1px solid #000000;text-align: right;">#MEMBER_CODE#</td>
@@ -104,7 +104,7 @@
                 </tr>
             </tbody>
         </table>
-
+        
     </BODY>
 </HTML>
 

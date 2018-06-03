@@ -7,12 +7,13 @@
 //
 
 #import "SearchPortViewController.h"
-
 #import "AppDelegate.h"
-
 #import "ModelCapability.h"
 
 #import <StarIO/SMPort.h>
+//#import "Setting.h"
+#import "Printer.h"
+
 
 typedef NS_ENUM(NSInteger, CellParamIndex) {
     CellParamIndexPortName = 0,
@@ -31,7 +32,6 @@ typedef NS_ENUM(NSInteger, AlertViewIndex) {
 };
 
 @interface SearchPortViewController ()
-
 @property (nonatomic) NSMutableArray *cellArray;
 
 @property (nonatomic) NSIndexPath *selectedIndexPath;
@@ -50,6 +50,12 @@ typedef NS_ENUM(NSInteger, AlertViewIndex) {
 @end
 
 @implementation SearchPortViewController
+@synthesize customVc;
+@synthesize printerPortKey;
+@synthesize printerPort;
+@synthesize printer;
+@synthesize selectPrinter;
+
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -66,11 +72,6 @@ typedef NS_ENUM(NSInteger, AlertViewIndex) {
     _tableView.delegate = self;
 }
 
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
-}
-
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     
@@ -80,16 +81,6 @@ typedef NS_ENUM(NSInteger, AlertViewIndex) {
         _didAppear = YES;
     }
 }
-
-/*
-#pragma mark - Navigation
-
-// In a storyboard-based application, you will often want to do a little preparation before navigation
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-    // Get the new view controller using [segue destinationViewController].
-    // Pass the selected object to the new view controller.
-}
-*/
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
     // Return the number of sections.
@@ -237,7 +228,11 @@ typedef NS_ENUM(NSInteger, AlertViewIndex) {
 //
 //      [self.navigationController popViewControllerAnimated:YES];
     }
-    else {     // Ex4. Indirect Setting.
+    else
+    {     // Ex4. Indirect Setting
+    
+    
+    
         ModelIndex modelIndex = [ModelCapability modelIndexAtModelName:modelName];
         
         if (modelIndex != ModelIndexNone) {
@@ -263,16 +258,41 @@ typedef NS_ENUM(NSInteger, AlertViewIndex) {
     }
 }
 
-- (void)refreshPortInfo {
-    UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:@"Select Interface."
-                                                        message:@""
-                                                       delegate:self
-                                              cancelButtonTitle:@"Cancel"
-                                              otherButtonTitles:@"LAN", @"Bluetooth", @"Bluetooth Low Energy", @"All", @"Manual", nil];
-    
-    alertView.tag = AlertViewIndexRefreshPort;
-    
-    [alertView show];
+- (void)refreshPortInfo
+{
+    {
+        self.blind = YES;
+        
+        [_cellArray removeAllObjects];
+        
+        _selectedIndexPath = nil;
+        
+        NSArray *portInfoArray;
+        
+        portInfoArray = [SMPort searchPrinter:@"TCP:"];
+        
+        NSString *portName   = [AppDelegate getPortName];
+        NSString *modelName  = [AppDelegate getModelName];
+        NSString *macAddress = [AppDelegate getMacAddress];
+        
+        int row = 0;
+        
+        for (PortInfo *portInfo in portInfoArray) {
+            [_cellArray addObject:@[portInfo.portName, portInfo.modelName, portInfo.macAddress]];
+            
+            if ([portInfo.portName   isEqualToString:portName]   == YES &&
+                [portInfo.modelName  isEqualToString:modelName]  == YES &&
+                [portInfo.macAddress isEqualToString:macAddress] == YES) {
+                _selectedIndexPath = [NSIndexPath indexPathForRow:row inSection:0];
+            }
+            
+            row++;
+        }
+        
+        [_tableView reloadData];
+        
+        self.blind = NO;
+    }
 }
 
 - (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
@@ -449,7 +469,8 @@ typedef NS_ENUM(NSInteger, AlertViewIndex) {
         }
     }
     else if (alertView.tag == AlertViewIndexCashDrawerOpenActive) {
-        if (buttonIndex != alertView.cancelButtonIndex) {
+//        if (buttonIndex != alertView.cancelButtonIndex)
+        {
             [AppDelegate setPortName    :_portName];
             [AppDelegate setPortSettings:_portSettings];
             [AppDelegate setModelName   :_modelName];
@@ -465,17 +486,40 @@ typedef NS_ENUM(NSInteger, AlertViewIndex) {
             
             alertView.delegate = nil;
             
-            [self.navigationController popViewControllerAnimated:YES];
+            //
+            customVc = [[CustomViewController alloc]init];
+            
+            
+            //update printer port
+            printer.model = _modelName;
+            printer.macAddress = _macAddress;
+            printer.portName = _portName;
+            printer.modifiedUser = [Utility modifiedUser];
+            printer.modifiedDate = [Utility currentDateTime];
+            
+            printerPort = _portName;
+            
+
+            
+            customVc.homeModel = [[HomeModel alloc]init];
+            customVc.homeModel.delegate = self;
+            [customVc.homeModel updateItems:dbPrinter withData:printer actionScreen:@"update printer in search port screen"];
+   
+            selectPrinter = 1;
+            [self performSegueWithIdentifier:@"segUnwindToSetUpPrinter" sender:self];
         }
     }
 }
 
 - (void)alertView:(UIAlertView *)alertView didDismissWithButtonIndex:(NSInteger)buttonIndex {
-    if (alertView.tag == AlertViewIndexRefreshPort) {
+    if (alertView.tag == AlertViewIndexRefreshPort)
+    {
         if (buttonIndex == alertView.cancelButtonIndex) {
             alertView.delegate = nil;
             
-            [self.navigationController popViewControllerAnimated:YES];
+//            [self.navigationController popViewControllerAnimated:YES];
+            [self performSegueWithIdentifier:@"segUnwindToSettingPrinter" sender:self];
+//            [self performSegueWithIdentifier:@"segUnwindToReceipt" sender:self];
         }
         else if (buttonIndex == 5) {     // Manual
             UIAlertView *nestAlertView = [[UIAlertView alloc] initWithTitle:@"Please enter the port name." message:nil delegate:self cancelButtonTitle:@"Cancel" otherButtonTitles:@"OK", nil];
@@ -487,7 +531,8 @@ typedef NS_ENUM(NSInteger, AlertViewIndex) {
             
             [nestAlertView show];
         }
-        else {
+        else
+        {
             self.blind = YES;
             
             [_cellArray removeAllObjects];
@@ -537,4 +582,22 @@ typedef NS_ENUM(NSInteger, AlertViewIndex) {
     }
 }
 
+- (IBAction)goBack:(id)sender
+{
+//    [self.navigationController popViewControllerAnimated:YES];
+    selectPrinter = 0;
+    [self performSegueWithIdentifier:@"segUnwindToSetUpPrinter" sender:self];
+//    [self performSegueWithIdentifier:@"segUnwindToReceipt" sender:self];
+    
+}
+
+-(void)itemsUpdated
+{
+    
+}
+
+- (IBAction)reloadPort:(id)sender
+{
+    [self refreshPortInfo];
+}
 @end

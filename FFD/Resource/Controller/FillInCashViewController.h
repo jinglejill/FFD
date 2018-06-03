@@ -7,7 +7,18 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "CustomViewController.h"
+#import "ReceiptViewController.h"
+#import "ConfirmAndCancelView.h"
+#import "Receipt.h"
 
-@interface FillInCashViewController : UIViewController
+
+
+@interface FillInCashViewController : CustomViewController<UITableViewDelegate,UITableViewDataSource,UITextFieldDelegate>
+@property (strong, nonatomic) IBOutlet UITableView *tbvCash;
+@property (strong, nonatomic) Receipt *receipt;
+@property (nonatomic) float totalAmount;
+@property (strong, nonatomic) ConfirmAndCancelView *vwConfirmAndCancel;
+@property (strong, nonatomic) ReceiptViewController *vc;
 
 @end

@@ -10,4 +10,9 @@
 
 @interface CustomCollectionViewCellButton : UICollectionViewCell
 
+@property (strong, nonatomic) IBOutlet UIButton *btnValue;
+@property (strong, nonatomic) IBOutlet NSLayoutConstraint *btnHeightConstant;
+@property (strong, nonatomic) IBOutlet NSLayoutConstraint *btnWidthConstant;
+@property (strong, nonatomic) IBOutlet NSLayoutConstraint *btnLeadingConstant;
+
 @end

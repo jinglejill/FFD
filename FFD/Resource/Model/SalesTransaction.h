@@ -9,5 +9,10 @@
 #import <Foundation/Foundation.h>
 
 @interface SalesTransaction : NSObject
+@property (retain, nonatomic) NSDate * receiptDate;
+@property (retain, nonatomic) NSString *menuType;
+@property (retain, nonatomic) NSString *menu;
+@property (nonatomic) float quantity;
+@property (nonatomic) float totalAmount;
 
 @end

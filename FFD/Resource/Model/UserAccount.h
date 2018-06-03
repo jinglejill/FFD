@@ -20,6 +20,7 @@
 @property (retain, nonatomic) NSString * email;
 @property (retain, nonatomic) NSString * phoneNo;
 @property (retain, nonatomic) NSString * lineID;
+@property (nonatomic) NSInteger roleID;
 @property (retain, nonatomic) NSString * modifiedUser;
 @property (retain, nonatomic) NSDate * modifiedDate;
 
@@ -31,7 +32,7 @@
 
 
 
--(UserAccount *)initWithUsername:(NSString *)username password:(NSString *)password deviceToken:(NSString *)deviceToken fullName:(NSString *)fullName nickName:(NSString *)nickName email:(NSString *)email phoneNo:(NSString *)phoneNo lineID:(NSString *)lineID;
+-(UserAccount *)initWithUsername:(NSString *)username password:(NSString *)password deviceToken:(NSString *)deviceToken fullName:(NSString *)fullName nickName:(NSString *)nickName email:(NSString *)email phoneNo:(NSString *)phoneNo lineID:(NSString *)lineID roleID:(NSInteger)roleID;
 +(NSInteger)getNextID;
 +(void)addObject:(UserAccount *)userAccount;
 +(BOOL)usernameExist:(NSString *)username;

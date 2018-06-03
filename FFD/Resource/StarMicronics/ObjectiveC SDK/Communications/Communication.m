@@ -276,7 +276,9 @@
             portName:(NSString *)portName
         portSettings:(NSString *)portSettings
              timeout:(NSInteger)timeout
-   completionHandler:(SendCompletionHandler)completionHandler {
+   completionHandler:(SendCompletionHandler)completionHandler
+    
+   {
     BOOL result = NO;
     
     NSString *title   = @"";
@@ -287,6 +289,7 @@
     }
     
     uint32_t commandLength = (uint32_t) commands.length;
+    
     
     unsigned char *commandsBytes = (unsigned char *) commands.bytes;
     
@@ -314,7 +317,7 @@
             NSDate *startDate = [NSDate date];
             
             uint32_t total = 0;
-            
+            NSLog(@"command length: %ld",commands.length);
             while (total < commandLength) {
                 uint32_t written = [port writePort:commandsBytes :total :commandLength - total];
                 

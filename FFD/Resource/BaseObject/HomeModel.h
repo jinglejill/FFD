@@ -19,12 +19,16 @@
 - (void)itemsUpdated;
 - (void)itemsUpdated:(NSString *)alert;
 - (void)itemsSynced:(NSArray *)items;
+- (void)itemsSyncedPrintKitchenBill:(NSArray *)items receiptID:(NSInteger)receiptID;
+//- (void)itemsSyncedWithoutLoadViewProcess:(NSArray *)items;
 - (void)itemsDeleted;
 - (void)emailSent;
 - (void)photoUploaded;
 - (void)connectionFail;
-- (void)itemsInsertedWithReturnID:(NSInteger)ID;
-- (void)itemsInsertedWithReturnData:(NSMutableArray *)data;
+- (void)itemsInsertedWithReturnID:(NSString *)strID;
+- (void)itemsInsertedWithReturnData:(NSArray *)items;
+- (void)alertMsg:(NSString *)msg;
+//- (void)itemsInsertedReplaceSelf;
 - (void)itemsFail;
 - (void)salesGenerated:(NSString *)fileName;
 - (void)salesGeneratedFail;
@@ -45,15 +49,21 @@ enum enumAction
 
 @property (nonatomic, weak) id<HomeModelProtocol> delegate;
 @property (nonatomic) enum enumDB propCurrentDB;
+@property (nonatomic) enum enumDB propCurrentDBUpdate;
+@property (nonatomic) enum enumDB propCurrentDBInsert;
 @property (nonatomic, retain) NSMutableData *dataToDownload;
 @property (nonatomic) float downloadSize;
+@property (nonatomic) NSInteger printWithAddress;
+
 
 - (void)downloadItems:(enum enumDB)currentDB;
-- (void)downloadItems:(enum enumDB)currentDB condition:(NSObject *)object;
+- (void)downloadItems:(enum enumDB)currentDB withData:(NSObject *)data;
 - (void)insertItems:(enum enumDB)currentDB withData:(NSObject *)data actionScreen:(NSString *)actionScreen;
 - (void)updateItems:(enum enumDB)currentDB withData:(NSObject *)data actionScreen:(NSString *)actionScreen;
 - (void)deleteItems:(enum enumDB)currentDB withData:(NSObject *)data actionScreen:(NSString *)actionScreen;
 - (void)syncItems:(enum enumDB)currentDB withData:(NSObject *)data;
+- (void)syncItemsPrintKitchenBill:(enum enumDB)currentDB withData:(NSObject *)data;
+//- (void)syncItemsWithoutLoadViewProcess:(enum enumDB)currentDB withData:(NSObject *)data;
 - (void)sendEmail:(NSString *)toAddress withSubject:(NSString *)subject andBody:(NSString *)body;
 - (void)uploadPhoto:(NSData *)photo fileName:(NSString *)fileName;
 - (void)downloadImageWithFileName:(NSString *)fileName completionBlock:(void (^)(BOOL succeeded, UIImage *image))completionBlock;

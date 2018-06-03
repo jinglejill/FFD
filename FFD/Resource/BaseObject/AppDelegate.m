@@ -8,19 +8,34 @@
 
 #import "AppDelegate.h"
 #import "OrderTakingViewController.h"
+#import "ReceiptViewController.h"
+#import "CustomerTableViewController.h"
+#import "CustomerKitchenViewController.h"
+#import "OrderDetailViewController.h"
+#import "LogInViewController.h"
 #import "HomeModel.h"
 #import "Utility.h"
 #import <objc/runtime.h>
 #import <DropboxSDK/DropboxSDK.h>
 #import "PushSync.h"
+#import "OrderTaking.h"
+#import "Receipt.h"
+#import "Dispute.h"
+
 
 
 #define SYSTEM_VERSION_GRATERTHAN_OR_EQUALTO(v)  ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] != NSOrderedAscending)
 
 
 
-@interface AppDelegate (){
+@interface AppDelegate ()
+{
     HomeModel *_homeModel;
+    HomeModel *_homeModelPushSyncUpdate;
+    HomeModel *_homeModelPushSyncUpdateByDevice;
+    HomeModel *_homeModelSyncItems;
+    
+    NSInteger _testReceiptID;
 }
 //printer part*******
 @property (nonatomic, copy) NSString *portName;
@@ -67,7 +82,7 @@ void myExceptionHandler(NSException *exception)
     
     NSString *stackTrace = [[[exception callStackSymbols] valueForKey:@"description"] componentsJoinedByString:@"\\n"];
     stackTrace = [NSString stringWithFormat:@"%@,%@\\n%@\\n%@",[Utility modifiedUser],[Utility deviceToken],exception.reason,stackTrace];
-    NSLog(@"Stack Trace callStackSymbols: %@", stackTrace);
+//    NSLog(@"Stack Trace callStackSymbols: %@", stackTrace);
     
     [[NSUserDefaults standardUserDefaults] setValue:stackTrace forKey:@"exception"];
     
@@ -76,6 +91,7 @@ void myExceptionHandler(NSException *exception)
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+    _testReceiptID = 349;
     //printer part*******
     [self loadParam];
     
@@ -94,6 +110,10 @@ void myExceptionHandler(NSException *exception)
     [Utility setFinishLoadSharedData:NO];
     _homeModel = [[HomeModel alloc]init];
     _homeModel.delegate = self;
+    _homeModelPushSyncUpdate = [[HomeModel alloc]init];
+    _homeModelPushSyncUpdate.delegate = self;
+    _homeModelSyncItems = [[HomeModel alloc]init];
+    _homeModelSyncItems.delegate = self;
     
     
     globalRotateFromSeg = NO;
@@ -134,17 +154,25 @@ void myExceptionHandler(NSException *exception)
     
     //push notification
     {
+
         if(SYSTEM_VERSION_GRATERTHAN_OR_EQUALTO(@"10.0"))
         {
-            UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+            
+            UNNotificationAction *notificationAction1 = [UNNotificationAction actionWithIdentifier:@"Print"
+                                                                                             title:@"Print"
+                                                                                           options:UNNotificationActionOptionForeground];
+            UNNotificationAction *notificationAction2 = [UNNotificationAction actionWithIdentifier:@"View"
+                                                                                             title:@"View"
+                                                                                           options:UNNotificationActionOptionForeground];
+            UNNotificationCategory *notificationCategory = [UNNotificationCategory categoryWithIdentifier:@"printKitchenBill"                                                                                                     actions:@[notificationAction1,notificationAction2] intentIdentifiers:@[] options:UNNotificationCategoryOptionNone];
+            
+            
+            // Register the notification categories.
+            UNUserNotificationCenter* center = [UNUserNotificationCenter currentNotificationCenter];
             center.delegate = self;
-            [center requestAuthorizationWithOptions:(UNAuthorizationOptionSound | UNAuthorizationOptionAlert | UNAuthorizationOptionBadge) completionHandler:^(BOOL granted, NSError * _Nullable error){
-                if( !error )
-                {
-                    NSLog(@"request authorization succeeded!");
-                    [[UIApplication sharedApplication] registerForRemoteNotifications];
-                }
-            }];
+            [center setNotificationCategories:[NSSet setWithObjects:notificationCategory,nil]];
+            
+            
         }
         else
         {
@@ -158,15 +186,23 @@ void myExceptionHandler(NSException *exception)
     
     //load shared at the begining of everyday
     NSDictionary *todayLoadShared = [[NSUserDefaults standardUserDefaults] dictionaryForKey:@"todayLoadShared"];
-    NSString *strCurrentDate = [Utility dateToString:[NSDate date] toFormat:@"yyyy-MM-dd"];
+    NSString *strCurrentDate = [Utility dateToString:[Utility currentDateTime] toFormat:@"yyyy-MM-dd"];
     NSString *alreadyLoaded = [todayLoadShared objectForKey:strCurrentDate];
     if(!alreadyLoaded)
     {
         [[NSUserDefaults standardUserDefaults] setObject:[NSDictionary dictionaryWithObject:@"1" forKey:strCurrentDate] forKey:@"todayLoadShared"];
     }
     
+    
+    #if (TARGET_OS_SIMULATOR)
+        NSString *token = @"simulator";
+        [[NSUserDefaults standardUserDefaults] setValue:token forKey:TOKEN];
+    #endif
+
+
     return YES;
 }
+//[UIApplicationDelegate application:didReceiveRemoteNotification:fetchCompletionHandler:]
 
 -(void)userNotificationCenter:(UNUserNotificationCenter *)center willPresentNotification:(UNNotification *)notification withCompletionHandler:(void (^)(UNNotificationPresentationOptions options))completionHandler{
     
@@ -184,21 +220,27 @@ void myExceptionHandler(NSException *exception)
     NSLog(@"Received notification: %@", userInfo);
     
     
-    NSDictionary *myAps;
-    for(id key in userInfo)
-    {
-        myAps = [userInfo objectForKey:key];
-    }
-    
-    
-    NSNumber *badge = [myAps objectForKey:@"badge"];
-    if([badge integerValue] == 0)
+    NSDictionary *myAps = [userInfo objectForKey:@"aps"];
+    NSString *categoryIdentifier = [myAps objectForKey:@"category"];
+    NSNumber *contentAvailable = [myAps objectForKey:@"content-available"];
+    if([contentAvailable integerValue] == 1)
     {
         //check timesynced = null where devicetoken = [Utility deviceToken];
         PushSync *pushSync = [[PushSync alloc]init];
         pushSync.deviceToken = [Utility deviceToken];
-        [_homeModel syncItems:dbPushSync withData:pushSync];
+        [_homeModelSyncItems syncItems:dbPushSync withData:pushSync];
         NSLog(@"syncitems");
+    }
+    
+    if([categoryIdentifier isEqualToString:@"cancelOrder"])
+    {
+        //        if([response.actionIdentifier isEqualToString:@"Print"])
+        {
+            NSNumber *receiptID = [myAps objectForKey:@"receiptID"];
+            _homeModel = [[HomeModel alloc]init];
+            _homeModel.delegate = self;
+            [_homeModel downloadItems:dbJummumReceiptUpdate withData:receiptID];
+        }
     }
 }
 
@@ -209,6 +251,18 @@ void myExceptionHandler(NSException *exception)
     
     NSLog(@"Userinfo %@",response.notification.request.content.userInfo);
     
+    
+    NSDictionary *userInfo = response.notification.request.content.userInfo;
+    NSDictionary *myAps = [userInfo objectForKey:@"aps"];
+    NSString *categoryIdentifier = [myAps objectForKey:@"category"];
+    if([categoryIdentifier isEqualToString:@"printKitchenBill"])
+    {
+        if([response.actionIdentifier isEqualToString:@"Print"])
+        {
+            NSNumber *receiptID = [myAps objectForKey:@"receiptID"];
+            [_homeModel downloadItems:dbJummumReceipt withData:receiptID];
+        }
+    }
 }
 
 - (void)application:(UIApplication *)application handleActionWithIdentifier:(NSString *)identifier forRemoteNotification:(NSDictionary *)userInfo completionHandler:(void(^)())completionHandler
@@ -229,8 +283,12 @@ void myExceptionHandler(NSException *exception)
     token = [token stringByReplacingOccurrencesOfString:@" " withString:@""];
     NSLog(@"token---%@", token);
     //    globalDeviceToken = token;
+    
+    
     [[NSUserDefaults standardUserDefaults] setValue:token forKey:TOKEN];
     [[NSUserDefaults standardUserDefaults] synchronize];
+    
+
 }
 
 -(void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error
@@ -241,35 +299,80 @@ void myExceptionHandler(NSException *exception)
 {
     NSLog(@"didRegisterUserNotificationSettings");
 }
-- (void)application:(UIApplication*)application didReceiveRemoteNotification:(NSDictionary*)userInfo
-{
-    if(![Utility finishLoadSharedData])
-    {
-        return;
-    }
+
+- (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
     
-    
-    NSLog(@"Received notification: %@", userInfo);
-    NSDictionary *myAps;
-    for(id key in userInfo)
-    {
-        myAps = [userInfo objectForKey:key];
-    }
-    
-    
-    NSNumber *badge = [myAps objectForKey:@"badge"];
-    if([badge integerValue] == 0)
-    {
-        //check timesynced = null where devicetoken = [Utility deviceToken];
-        PushSync *pushSync = [[PushSync alloc]init];
-        pushSync.deviceToken = [Utility deviceToken];
-        [_homeModel syncItems:dbPushSync withData:pushSync];
-        NSLog(@"syncitems");
+    if(application.applicationState == UIApplicationStateInactive) {
+        
+        NSLog(@"Inactive");
+        
+        //Show the view with the content of the push
+        
+        completionHandler(UIBackgroundFetchResultNewData);
+        
+    } else if (application.applicationState == UIApplicationStateBackground) {
+        
+        NSLog(@"Background");
+        
+        //Refresh the local model
+        
+        completionHandler(UIBackgroundFetchResultNewData);
+        
+        
+        if(![Utility finishLoadSharedData])
+        {
+            return;
+        }
+        
+        
+        NSLog(@"Received notification: %@", userInfo);
+        NSDictionary *myAps = [userInfo objectForKey:@"aps"];
+        NSNumber *contentAvailable = [myAps objectForKey:@"content-available"];
+        if([contentAvailable integerValue] == 1)
+        {
+            //check timesynced = null where devicetoken = [Utility deviceToken];
+            PushSync *pushSync = [[PushSync alloc]init];
+            pushSync.deviceToken = [Utility deviceToken];
+            [_homeModelSyncItems syncItems:dbPushSync withData:pushSync];
+            NSLog(@"syncitems");
+        }
+        
+    } else {
+        
+        NSLog(@"Active");
+        
+        //Show an in-app banner
+        
+        completionHandler(UIBackgroundFetchResultNewData);
+        
     }
 }
 
+//- (void)application:(UIApplication*)application didReceiveRemoteNotification:(NSDictionary*)userInfo
+//{
+//    if(![Utility finishLoadSharedData])
+//    {
+//        return;
+//    }
+//    
+//    
+//    NSLog(@"Received notification: %@", userInfo);
+//    NSDictionary *myAps = [userInfo objectForKey:@"aps"];
+//    NSNumber *contentAvailable = [myAps objectForKey:@"content-available"];
+//    if([contentAvailable integerValue] == 1)
+//    {
+//        //check timesynced = null where devicetoken = [Utility deviceToken];
+//        PushSync *pushSync = [[PushSync alloc]init];
+//        pushSync.deviceToken = [Utility deviceToken];
+//        [_homeModelSyncItems syncItems:dbPushSync withData:pushSync];
+//        NSLog(@"syncitems");
+//    }
+//
+//}
+
 - (void)itemsSynced:(NSArray *)items
 {
+    NSLog(@"items count: %ld",[items count]);
     if([items count] == 0)
     {
         UINavigationController * navigationController = self.navController;
@@ -285,6 +388,151 @@ void myExceptionHandler(NSException *exception)
     
     
     NSMutableArray *pushSyncList = [[NSMutableArray alloc]init];
+    
+    
+    //type == exit
+    for(int j=0; j<[items count]; j++)
+    {
+        NSDictionary *payload = items[j];
+        NSString *type = [payload objectForKey:@"downltype"];
+        NSString *strPushSyncID = [payload objectForKey:@"pushSyncID"];
+        
+        
+        if([type isEqualToString:@"exitApp"])
+        {
+            //เช็คว่าเคย sync pushsyncid นี้ไปแล้วยัง
+            if([PushSync alreadySynced:[strPushSyncID integerValue]])
+            {
+                continue;
+            }
+            else
+            {
+                //update shared ใช้ในกรณี เรียก homemodel > 1 อันต่อหนึ่ง click คำสั่ง ซึ่งทำให้เกิดการ เรียก function syncitems ตัวที่ 2 ก่อนเกิดการ update timesynced จึงทำให้เกิดการเบิ้ล sync
+                PushSync *pushSync = [[PushSync alloc]initWithPushSyncID:[strPushSyncID integerValue]];
+                [PushSync addObject:pushSync];
+                [pushSyncList addObject:pushSync];
+            }
+            
+
+
+            UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"มีการปรับปรุงแอพ"
+                                                                           message:@"กรุณาเปิดแอพใหม่อีกครั้งเพื่อใช้งาน"
+                                                                    preferredStyle:UIAlertControllerStyleAlert];
+            
+            UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
+                                                                  handler:^(UIAlertAction * action)
+                                            {
+                                                exit(0);
+                                            }];
+            
+            [alert addAction:defaultAction];
+            [self.vc presentViewController:alert animated:YES completion:nil];
+        }
+    }
+    
+    
+    
+    
+    
+    
+    //type == alert
+    for(int j=0; j<[items count]; j++)
+    {
+        NSDictionary *payload = items[j];
+        NSString *type = [payload objectForKey:@"type"];
+        NSString *strPushSyncID = [payload objectForKey:@"pushSyncID"];
+        NSArray *data = [payload objectForKey:@"data"];
+        
+        
+        if([type isEqualToString:@"alert"])
+        {
+            //เช็คว่าเคย sync pushsyncid นี้ไปแล้วยัง
+            if([PushSync alreadySynced:[strPushSyncID integerValue]])
+            {
+                continue;
+            }
+            else
+            {
+                //update shared ใช้ในกรณี เรียก homemodel > 1 อันต่อหนึ่ง click คำสั่ง ซึ่งทำให้เกิดการ เรียก function syncitems ตัวที่ 2 ก่อนเกิดการ update timesynced จึงทำให้เกิดการเบิ้ล sync
+                PushSync *pushSync = [[PushSync alloc]initWithPushSyncID:[strPushSyncID integerValue]];
+                [PushSync addObject:pushSync];
+                [pushSyncList addObject:pushSync];
+            }
+            
+        
+            
+            NSString *alertMsg = [NSString stringWithFormat:@"%@ is fail",[(NSDictionary *)data objectForKey:@"alert"]];
+            UIAlertController* alert = [UIAlertController alertControllerWithTitle:[Utility getSqlFailTitle]
+                                                                           message:alertMsg
+                                                                    preferredStyle:UIAlertControllerStyleAlert];
+            
+            UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
+                                                                  handler:^(UIAlertAction * action)
+                                            {
+                                                SEL s = NSSelectorFromString(@"loadingOverlayView");
+                                                [self.vc performSelector:s];
+                                                [_homeModel downloadItems:dbMaster];
+                                            }];
+            
+            [alert addAction:defaultAction];
+            [self.vc presentViewController:alert animated:YES completion:nil];
+        }
+    }
+    
+    
+    
+    //type == usernameconflict
+    for(int j=0; j<[items count]; j++)
+    {
+        NSDictionary *payload = items[j];
+        NSString *type = [payload objectForKey:@"type"];
+        NSString *strPushSyncID = [payload objectForKey:@"pushSyncID"];
+        NSArray *data = [payload objectForKey:@"data"];
+        
+        
+        if([type isEqualToString:@"usernameconflict"])
+        {
+            //เช็คว่าเคย sync pushsyncid นี้ไปแล้วยัง
+            if([PushSync alreadySynced:[strPushSyncID integerValue]])
+            {
+                continue;
+            }
+            else
+            {
+                //update shared ใช้ในกรณี เรียก homemodel > 1 อันต่อหนึ่ง click คำสั่ง ซึ่งทำให้เกิดการ เรียก function syncitems ตัวที่ 2 ก่อนเกิดการ update timesynced จึงทำให้เกิดการเบิ้ล sync
+                PushSync *pushSync = [[PushSync alloc]initWithPushSyncID:[strPushSyncID integerValue]];
+                [PushSync addObject:pushSync];
+                [pushSyncList addObject:pushSync];
+            }
+            
+            
+            //you have login in another device และ unwind to หน้า sign in
+            if(![self.vc isMemberOfClass:[LogInViewController class]])
+            {
+                UIAlertController* alert = [UIAlertController alertControllerWithTitle:@""
+                                                                               message:@"Username นี้กำลังถูกใช้เข้าระบบที่เครื่องอื่น"
+                                                                        preferredStyle:UIAlertControllerStyleAlert];
+                
+                UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
+                                                                      handler:^(UIAlertAction * action)
+                {
+                    UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"Main" bundle:nil];
+                    LogInViewController *logInViewController = [storyboard instantiateViewControllerWithIdentifier:@"LogInViewController"];
+                                        [UIApplication sharedApplication].keyWindow.rootViewController = logInViewController;
+                }];
+                
+                [alert addAction:defaultAction];
+                [self.vc presentViewController:alert animated:YES completion:nil];
+            }
+        }
+    }
+
+
+
+
+
+    
+    
     for(int j=0; j<[items count]; j++)
     {
         NSDictionary *payload = items[j];
@@ -309,34 +557,9 @@ void myExceptionHandler(NSException *exception)
         
         
 
-        if([type isEqualToString:@"alert"])
+        if([data isKindOfClass:[NSArray class]])
         {
-            
-            UINavigationController * navigationController = self.navController;
-            UIViewController *viewController = navigationController.visibleViewController;
-            
-            NSString *alertMsg = [NSString stringWithFormat:@"%@ is fail",(NSString *)data];
-            UIAlertController* alert = [UIAlertController alertControllerWithTitle:[Utility getSqlFailTitle]
-                                                                           message:alertMsg
-                                                                    preferredStyle:UIAlertControllerStyleAlert];
-            
-            UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
-                                                                  handler:^(UIAlertAction * action)
-                                            {
-                                                SEL s = NSSelectorFromString(@"loadingOverlayView");
-                                                [viewController performSelector:s];
-                                                [_homeModel downloadItems:dbMaster];
-                                            }];
-            
-            [alert addAction:defaultAction];
-            [viewController presentViewController:alert animated:YES completion:nil];
-        }
-        else
-        {
-            if([data isKindOfClass:[NSArray class]])
-            {
-                [Utility itemsSynced:type action:action data:data];
-            }
+            [Utility itemsSynced:type action:action data:data];
         }
     }
     
@@ -344,7 +567,8 @@ void myExceptionHandler(NSException *exception)
     //update pushsync ที่ sync แล้ว
     if([pushSyncList count]>0)
     {
-        [_homeModel updateItems:dbPushSyncUpdateTimeSynced withData:pushSyncList actionScreen:@"Update synced time"];
+        NSLog(@"push sync list count: %ld",[pushSyncList count]);
+        [_homeModelPushSyncUpdate updateItems:dbPushSyncUpdateTimeSynced withData:pushSyncList actionScreen:@"Update synced time"];
     }
     
     
@@ -358,117 +582,746 @@ void myExceptionHandler(NSException *exception)
     }
     if([items count] > 0)
     {
-        UINavigationController * navigationController = self.navController;
-        UIViewController *viewController = navigationController.visibleViewController;
-        if([viewController isMemberOfClass:[OrderTakingViewController class]])//check กรณีเดียวก่อนคือ OrderTakingViewController
+        BOOL loadViewProcess = NO;
+        NSArray *arrReferenceTable;
+        if([self.vc isMemberOfClass:[OrderTakingViewController class]])
         {
-            NSArray *arrReferenceTable = @[@"tMenuType",@"tMenu",@"tTableTaking",@"tCustomerTable"];
+            arrReferenceTable = @[@"MenuType",@"Menu",@"TableTaking",@"CustomerTable",@"OrderTaking",@"MenuTypeNote",@"OrderNote"];
             
-            NSArray *resultArray = [Utility intersectArray1:arrAllType array2:arrReferenceTable];
-            if([resultArray count] > 0)
+            
+            //ถ้า ordertaking เป็น โต๊ะตัวเองถึงจะ loadviewprocess
+            OrderTakingViewController *orderTakingVc = (OrderTakingViewController *)self.vc;
+            for(int j=0; j<[items count]; j++)
             {
+                NSDictionary *payload = items[j];
+                NSString *type = [payload objectForKey:@"type"];
+                NSString *action = [payload objectForKey:@"action"];
+                //NSString *strPushSyncID = [payload objectForKey:@"pushSyncID"];
+                NSArray *data = [payload objectForKey:@"data"];
+                
+                
+                if([type isEqualToString:@"OrderTaking"])
                 {
-                    SEL s = NSSelectorFromString(@"loadingOverlayView");
-                    if([viewController respondsToSelector:s])
+                    NSString *className = type;
+                    NSString *strNameID = [Utility getPrimaryKeyFromClassName:type];
+                    
+                    
+                    Class class = NSClassFromString([NSString stringWithFormat:@"Shared%@",className]);
+                    SEL selector = NSSelectorFromString([NSString stringWithFormat:@"shared%@",className]);
+                    SEL selectorList = NSSelectorFromString([NSString stringWithFormat:@"%@List",[Utility makeFirstLetterLowerCase:className]]);
+                    NSMutableArray *dataList = [[class performSelector:selector] performSelector:selectorList];
+                    
+                    
+                    //insert,update,delete data
+                    for(int i=0; i<[data count]; i++)
                     {
-                        [viewController performSelector:s];
-                    }
-                }
-
-                {
-                    SEL s = NSSelectorFromString(@"loadViewProcess");
-                    if([viewController respondsToSelector:s])
-                    {
-                        [viewController performSelector:s];
-                    }
-                }
-                {
-                    SEL s = NSSelectorFromString(@"removeOverlayViews");
-                    if([viewController respondsToSelector:s])
-                    {
-                        [viewController performSelector:s];
+                        NSDictionary *jsonElement = data[i];
+                        NSObject *object = [[NSClassFromString(className) alloc] init];
+                        
+                        unsigned int propertyCount = 0;
+                        objc_property_t * properties = class_copyPropertyList([object class], &propertyCount);
+                        
+                        for (unsigned int i = 0; i < propertyCount; ++i)
+                        {
+                            objc_property_t property = properties[i];
+                            const char * name = property_getName(property);
+                            NSString *key = [NSString stringWithUTF8String:name];
+                            
+                            
+                            NSString *dbColumnName = [Utility makeFirstLetterUpperCase:key];
+                            if(!jsonElement[dbColumnName])
+                            {
+                                continue;
+                            }
+                            
+                            
+                            if([Utility isDateColumn:dbColumnName])
+                            {
+                                NSDate *date = [Utility stringToDate:jsonElement[dbColumnName] fromFormat:@"yyyy-MM-dd HH:mm:ss"];
+                                [object setValue:date forKey:key];
+                            }
+                            else
+                            {
+                                [object setValue:jsonElement[dbColumnName] forKey:key];
+                            }
+                        }
+                        
+                        
+                        if([action isEqualToString:@"i"])
+                        {
+                            OrderTaking *orderTaking = (OrderTaking *)object;
+                            if(orderTaking.customerTableID == orderTakingVc.customerTable.customerTableID)
+                            {
+                                loadViewProcess = YES;
+                                break;
+                            }
+                        }
                     }
                 }
             }
         }
-    }
-    
-    
-    
-    
-    //ให้ refresh ข้อมูลที่ Show ที่หน้านั้นหลังจาก sync ข้อมูลมาใหม่ ตอนนี้ทำเฉพาะหน้า ReceiptSummaryViewController ก่อน
-    if([items count] > 0)
-    {
-        for(int j=0; j<[items count]; j++)
+        else if([self.vc isMemberOfClass:[ReceiptViewController class]])
         {
-            NSDictionary *payload = items[j];
-            NSString *type = [payload objectForKey:@"type"];
-            if([type isEqualToString:@"adminconflict"] || [type isEqualToString:@"usernameconflict"] || [type isEqualToString:@"alert"] || [type isEqualToString:@"alertPhotoUploadFail"])
+            arrReferenceTable = @[@"OrderTaking",@"Menu",@"OrderNote",@"Member",@"Address",@"Receipt",@"Discount",@"Setting",@"UserAccount",@"RewardProgram",@"RewardPoint",@"ReceiptNo",@"ReceiptNoTax",@"ReceiptCustomerTable",@"TableTaking",@"BillPrint"];
+            
+            
+            
+            //ถ้า receipt เป็น โต๊ะตัวเองถึงจะ loadviewprocess
+            ReceiptViewController *receiptVc = (ReceiptViewController *)self.vc;
+            for(int j=0; j<[items count]; j++)
             {
-                continue;
+                NSDictionary *payload = items[j];
+                NSString *type = [payload objectForKey:@"type"];
+                NSString *action = [payload objectForKey:@"action"];
+                //NSString *strPushSyncID = [payload objectForKey:@"pushSyncID"];
+                NSArray *data = [payload objectForKey:@"data"];
+                
+                
+                if([type isEqualToString:@"Receipt"])
+                {
+                    NSString *className = type;
+                    NSString *strNameID = [Utility getPrimaryKeyFromClassName:type];
+                    
+                    
+                    Class class = NSClassFromString([NSString stringWithFormat:@"Shared%@",className]);
+                    SEL selector = NSSelectorFromString([NSString stringWithFormat:@"shared%@",className]);
+                    SEL selectorList = NSSelectorFromString([NSString stringWithFormat:@"%@List",[Utility makeFirstLetterLowerCase:className]]);
+                    NSMutableArray *dataList = [[class performSelector:selector] performSelector:selectorList];
+                    
+                    
+                    //insert,update,delete data
+                    for(int i=0; i<[data count]; i++)
+                    {
+                        NSDictionary *jsonElement = data[i];
+                        NSObject *object = [[NSClassFromString(className) alloc] init];
+                        
+                        unsigned int propertyCount = 0;
+                        objc_property_t * properties = class_copyPropertyList([object class], &propertyCount);
+                        
+                        for (unsigned int i = 0; i < propertyCount; ++i)
+                        {
+                            objc_property_t property = properties[i];
+                            const char * name = property_getName(property);
+                            NSString *key = [NSString stringWithUTF8String:name];
+                            
+                            
+                            NSString *dbColumnName = [Utility makeFirstLetterUpperCase:key];
+                            if(!jsonElement[dbColumnName])
+                            {
+                                continue;
+                            }
+                            
+                            
+                            if([Utility isDateColumn:dbColumnName])
+                            {
+                                NSDate *date = [Utility stringToDate:jsonElement[dbColumnName] fromFormat:@"yyyy-MM-dd HH:mm:ss"];
+                                [object setValue:date forKey:key];
+                            }
+                            else
+                            {
+                                [object setValue:jsonElement[dbColumnName] forKey:key];
+                            }
+                        }
+                        
+                        
+                        if([action isEqualToString:@"i"] || [action isEqualToString:@"u"])
+                        {
+                            Receipt *receipt = (Receipt *)object;
+                            if(receipt.customerTableID == receiptVc.customerTable.customerTableID)
+                            {
+                                loadViewProcess = YES;                                
+                                break;
+                            }
+                        }
+                    }
+                }
+                else if([type isEqualToString:@"OrderTaking"])
+                {
+                    NSString *className = type;
+                    NSString *strNameID = [Utility getPrimaryKeyFromClassName:type];
+                    
+                    
+                    Class class = NSClassFromString([NSString stringWithFormat:@"Shared%@",className]);
+                    SEL selector = NSSelectorFromString([NSString stringWithFormat:@"shared%@",className]);
+                    SEL selectorList = NSSelectorFromString([NSString stringWithFormat:@"%@List",[Utility makeFirstLetterLowerCase:className]]);
+                    NSMutableArray *dataList = [[class performSelector:selector] performSelector:selectorList];
+                    
+                    
+                    //insert,update,delete data
+                    for(int i=0; i<[data count]; i++)
+                    {
+                        NSDictionary *jsonElement = data[i];
+                        NSObject *object = [[NSClassFromString(className) alloc] init];
+                        
+                        unsigned int propertyCount = 0;
+                        objc_property_t * properties = class_copyPropertyList([object class], &propertyCount);
+                        
+                        for (unsigned int i = 0; i < propertyCount; ++i)
+                        {
+                            objc_property_t property = properties[i];
+                            const char * name = property_getName(property);
+                            NSString *key = [NSString stringWithUTF8String:name];
+                            
+                            
+                            NSString *dbColumnName = [Utility makeFirstLetterUpperCase:key];
+                            if(!jsonElement[dbColumnName])
+                            {
+                                continue;
+                            }
+                            
+                            
+                            if([Utility isDateColumn:dbColumnName])
+                            {
+                                NSDate *date = [Utility stringToDate:jsonElement[dbColumnName] fromFormat:@"yyyy-MM-dd HH:mm:ss"];
+                                [object setValue:date forKey:key];
+                            }
+                            else
+                            {
+                                [object setValue:jsonElement[dbColumnName] forKey:key];
+                            }
+                        }
+                        
+                        
+                        if([action isEqualToString:@"i"])
+                        {
+                            OrderTaking *orderTaking = (OrderTaking *)object;
+                            if(orderTaking.customerTableID == receiptVc.customerTable.customerTableID)
+                            {
+                                loadViewProcess = YES;
+                                NSLog(@"test loadviewprocess yes ordertaking");
+                                break;
+                            }
+                        }
+                    }
+                }
             }
-            else
+        }
+        else if([self.vc isMemberOfClass:[CustomerTableViewController class]])
+        {
+            arrReferenceTable = @[@"UserAccount",@"TableTaking",@"OrderTaking",@"UserTabMenu",@"Board",@"Receipt"];
+            loadViewProcess = YES;
+        }
+        else if([self.vc isMemberOfClass:[CustomerKitchenViewController class]])
+        {
+            arrReferenceTable = @[@"OrderTaking",@"Receipt",@"OrderNote",@"PrintReceipt"];
+            loadViewProcess = YES;
+        }
+        NSArray *resultArray = [Utility intersectArray1:arrAllType array2:arrReferenceTable];
+        if([resultArray count] > 0)
+        {
+            if(loadViewProcess)
             {
-                UINavigationController * navigationController = self.navController;
-                UIViewController *viewController = navigationController.visibleViewController;
-//                if([viewController isMemberOfClass:[ReceiptSummaryViewController class]])//check กรณีเดียวก่อนคือ ReceiptSummaryViewController
-//                {
-//                    NSLog(@"staying at ReceiptSummaryViewController");
-//                    NSArray *arrReferenceTable = @[@"tProduct",@"tCashAllocation",@"tCustomMade",@"tReceipt",@"tReceiptProductItem",@"tCustomerReceipt",@"tPostCustomer",@"tPreOrderEventIDHistory"];
-//                    if([arrReferenceTable containsObject:type])
-//                    {
-//                        {
-//                            SEL s = NSSelectorFromString(@"loadingOverlayView");
-//                            if([viewController respondsToSelector:s])
-//                            {
-//                                [viewController performSelector:s];
-//                            }
-//                        }
-//                        
-//                        {
-//                            SEL s = NSSelectorFromString(@"loadViewProcess");
-//                            if([viewController respondsToSelector:s])
-//                            {
-//                                [viewController performSelector:s];
-//                            }
-//                        }
-//                        {
-//                            SEL s = NSSelectorFromString(@"removeOverlayViews");
-//                            if([viewController respondsToSelector:s])
-//                            {
-//                                [viewController performSelector:s];
-//                            }
-//                        }
-//                        break;
-//                    }
-//                }
+                {
+                    SEL s = NSSelectorFromString(@"loadingOverlayView");
+                    if([self.vc respondsToSelector:s])
+                    {
+                        [self.vc performSelector:s];
+                    }
+                }
+            
+                {
+                    SEL s = NSSelectorFromString(@"loadViewProcess");
+                    if([self.vc respondsToSelector:s])
+                    {
+                        [self.vc performSelector:s];
+                    }
+                }
+            
+                {
+                    SEL s = NSSelectorFromString(@"removeOverlayViews");
+                    if([self.vc respondsToSelector:s])
+                    {
+                        [self.vc performSelector:s];
+                    }
+                }
             }
         }
     }
 }
 
-//- (BOOL)stayInUserMenu
+//- (void)itemsSyncedPrintKitchenBill:(NSArray *)items receiptID:(NSInteger)receiptID
 //{
-//    UINavigationController * navigationController = self.navController;
-//    for (UIViewController *vc in navigationController.viewControllers) {
-//        if ([vc isKindOfClass:[PasscodeViewController class]]) {
-//            return NO;
+//    NSLog(@"items count: %ld",[items count]);
+//    if([items count] == 0)
+//    {
+//        UINavigationController * navigationController = self.navController;
+//        UIViewController *viewController = navigationController.visibleViewController;
+//        SEL s = NSSelectorFromString(@"removeOverlayViews");
+//        if([viewController respondsToSelector:s])
+//        {
+//            [viewController performSelector:s];
 //        }
-//    }
-//    
-//    return YES;
-//}
 //
-//- (BOOL)stayInAdminMenu
-//{
-//    UINavigationController * navigationController = self.navController;
-//    for (UIViewController *vc in navigationController.viewControllers) {
-//        if ([vc isKindOfClass:[PasscodeViewController class]]) {
-//            return YES;
+//        return;
+//    }
+//
+//
+//    NSMutableArray *pushSyncList = [[NSMutableArray alloc]init];
+//
+//
+//    //type == exit
+//    for(int j=0; j<[items count]; j++)
+//    {
+//        NSDictionary *payload = items[j];
+//        NSString *type = [payload objectForKey:@"type"];
+//        NSString *strPushSyncID = [payload objectForKey:@"pushSyncID"];
+//
+//
+//        if([type isEqualToString:@"exitApp"])
+//        {
+//            //เช็คว่าเคย sync pushsyncid นี้ไปแล้วยัง
+//            if([PushSync alreadySynced:[strPushSyncID integerValue]])
+//            {
+//                continue;
+//            }
+//            else
+//            {
+//                //update shared ใช้ในกรณี เรียก homemodel > 1 อันต่อหนึ่ง click คำสั่ง ซึ่งทำให้เกิดการ เรียก function syncitems ตัวที่ 2 ก่อนเกิดการ update timesynced จึงทำให้เกิดการเบิ้ล sync
+//                PushSync *pushSync = [[PushSync alloc]initWithPushSyncID:[strPushSyncID integerValue]];
+//                [PushSync addObject:pushSync];
+//                [pushSyncList addObject:pushSync];
+//            }
+//
+//
+//
+//            UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"มีการปรับปรุงแอพ"
+//                                                                           message:@"กรุณาเปิดแอพใหม่อีกครั้งเพื่อใช้งาน"
+//                                                                    preferredStyle:UIAlertControllerStyleAlert];
+//
+//            UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
+//                                                                  handler:^(UIAlertAction * action)
+//                                            {
+//                                                exit(0);
+//                                            }];
+//
+//            [alert addAction:defaultAction];
+//            [self.vc presentViewController:alert animated:YES completion:nil];
 //        }
 //    }
-//    
-//    return NO;
+//
+//
+//
+//
+//
+//
+//    //type == alert
+//    for(int j=0; j<[items count]; j++)
+//    {
+//        NSDictionary *payload = items[j];
+//        NSString *type = [payload objectForKey:@"type"];
+//        NSString *strPushSyncID = [payload objectForKey:@"pushSyncID"];
+//        NSArray *data = [payload objectForKey:@"data"];
+//
+//
+//        if([type isEqualToString:@"alert"])
+//        {
+//            //เช็คว่าเคย sync pushsyncid นี้ไปแล้วยัง
+//            if([PushSync alreadySynced:[strPushSyncID integerValue]])
+//            {
+//                continue;
+//            }
+//            else
+//            {
+//                //update shared ใช้ในกรณี เรียก homemodel > 1 อันต่อหนึ่ง click คำสั่ง ซึ่งทำให้เกิดการ เรียก function syncitems ตัวที่ 2 ก่อนเกิดการ update timesynced จึงทำให้เกิดการเบิ้ล sync
+//                PushSync *pushSync = [[PushSync alloc]initWithPushSyncID:[strPushSyncID integerValue]];
+//                [PushSync addObject:pushSync];
+//                [pushSyncList addObject:pushSync];
+//            }
+//
+//
+//
+//            NSString *alertMsg = [NSString stringWithFormat:@"%@ is fail",[(NSDictionary *)data objectForKey:@"alert"]];
+//            UIAlertController* alert = [UIAlertController alertControllerWithTitle:[Utility getSqlFailTitle]
+//                                                                           message:alertMsg
+//                                                                    preferredStyle:UIAlertControllerStyleAlert];
+//
+//            UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
+//                                                                  handler:^(UIAlertAction * action)
+//                                            {
+//                                                SEL s = NSSelectorFromString(@"loadingOverlayView");
+//                                                [self.vc performSelector:s];
+//                                                [_homeModel downloadItems:dbMaster];
+//                                            }];
+//
+//            [alert addAction:defaultAction];
+//            [self.vc presentViewController:alert animated:YES completion:nil];
+//        }
+//    }
+//
+//
+//
+//    //type == usernameconflict
+//    for(int j=0; j<[items count]; j++)
+//    {
+//        NSDictionary *payload = items[j];
+//        NSString *type = [payload objectForKey:@"type"];
+//        NSString *strPushSyncID = [payload objectForKey:@"pushSyncID"];
+//        NSArray *data = [payload objectForKey:@"data"];
+//
+//
+//        if([type isEqualToString:@"usernameconflict"])
+//        {
+//            //เช็คว่าเคย sync pushsyncid นี้ไปแล้วยัง
+//            if([PushSync alreadySynced:[strPushSyncID integerValue]])
+//            {
+//                continue;
+//            }
+//            else
+//            {
+//                //update shared ใช้ในกรณี เรียก homemodel > 1 อันต่อหนึ่ง click คำสั่ง ซึ่งทำให้เกิดการ เรียก function syncitems ตัวที่ 2 ก่อนเกิดการ update timesynced จึงทำให้เกิดการเบิ้ล sync
+//                PushSync *pushSync = [[PushSync alloc]initWithPushSyncID:[strPushSyncID integerValue]];
+//                [PushSync addObject:pushSync];
+//                [pushSyncList addObject:pushSync];
+//            }
+//
+//
+//            //you have login in another device และ unwind to หน้า sign in
+//            if(![self.vc isMemberOfClass:[LogInViewController class]])
+//            {
+//                UIAlertController* alert = [UIAlertController alertControllerWithTitle:@""
+//                                                                               message:@"Username นี้กำลังถูกใช้เข้าระบบที่เครื่องอื่น"
+//                                                                        preferredStyle:UIAlertControllerStyleAlert];
+//
+//                UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
+//                                                                      handler:^(UIAlertAction * action)
+//                                                {
+//                                                    UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"Main" bundle:nil];
+//                                                    LogInViewController *logInViewController = [storyboard instantiateViewControllerWithIdentifier:@"LogInViewController"];
+//                                                    [UIApplication sharedApplication].keyWindow.rootViewController = logInViewController;
+//                                                }];
+//
+//                [alert addAction:defaultAction];
+//                [self.vc presentViewController:alert animated:YES completion:nil];
+//            }
+//        }
+//    }
+//
+//
+//
+//
+//
+//
+//
+//    for(int j=0; j<[items count]; j++)
+//    {
+//        NSDictionary *payload = items[j];
+//        NSString *type = [payload objectForKey:@"type"];
+//        NSString *action = [payload objectForKey:@"action"];
+//        NSString *strPushSyncID = [payload objectForKey:@"pushSyncID"];
+//        NSArray *data = [payload objectForKey:@"data"];
+//
+//
+//        //เช็คว่าเคย sync pushsyncid นี้ไปแล้วยัง
+//        if([PushSync alreadySynced:[strPushSyncID integerValue]])
+//        {
+//            continue;
+//        }
+//        else
+//        {
+//            //update shared ใช้ในกรณี เรียก homemodel > 1 อันต่อหนึ่ง click คำสั่ง ซึ่งทำให้เกิดการ เรียก function syncitems ตัวที่ 2 ก่อนเกิดการ update timesynced จึงทำให้เกิดการเบิ้ล sync
+//            PushSync *pushSync = [[PushSync alloc]initWithPushSyncID:[strPushSyncID integerValue]];
+//            [PushSync addObject:pushSync];
+//            [pushSyncList addObject:pushSync];
+//        }
+//
+//
+//
+//        if([data isKindOfClass:[NSArray class]])
+//        {
+//            [Utility itemsSynced:type action:action data:data];
+//        }
+//    }
+//
+//
+//
+//
+//
+//    //************Print kitchen bill
+//    NSMutableArray *receiptList = [[NSMutableArray alloc]init];
+//    Receipt *receipt = [Receipt getReceipt:receiptID branchID:[Utility branchID]];
+//    [receiptList addObject:receipt];
+//    CustomViewController *vc = (CustomViewController *)self.vc;
+//    [vc printReceipt:receiptList];
+//    //************
+//
+//
+//
+//
+//
+//
+//    //update pushsync ที่ sync แล้ว
+//    if([pushSyncList count]>0)
+//    {
+//        NSLog(@"push sync list count: %ld",[pushSyncList count]);
+//        [_homeModel updateItems:dbPushSyncUpdateTimeSynced withData:pushSyncList actionScreen:@"Update synced time"];
+//    }
+//
+//
+//    //ให้ refresh ข้อมูลที่ Show ที่หน้านั้นหลังจาก sync ข้อมูลมาใหม่ ตอนนี้ทำเฉพาะหน้า OrderTakingViewController ก่อน
+//    NSMutableArray *arrAllType = [[NSMutableArray alloc]init];
+//    for(int j=0; j<[items count]; j++)
+//    {
+//        NSDictionary *payload = items[j];
+//        NSString *type = [payload objectForKey:@"type"];
+//        [arrAllType addObject:type];
+//    }
+//    if([items count] > 0)
+//    {
+//        BOOL loadViewProcess = NO;
+//        NSArray *arrReferenceTable;
+//        if([self.vc isMemberOfClass:[OrderTakingViewController class]])
+//        {
+//            arrReferenceTable = @[@"MenuType",@"Menu",@"TableTaking",@"CustomerTable",@"OrderTaking",@"MenuTypeNote",@"OrderNote"];
+//
+//
+//            //ถ้า ordertaking เป็น โต๊ะตัวเองถึงจะ loadviewprocess
+//            OrderTakingViewController *orderTakingVc = (OrderTakingViewController *)self.vc;
+//            for(int j=0; j<[items count]; j++)
+//            {
+//                NSDictionary *payload = items[j];
+//                NSString *type = [payload objectForKey:@"type"];
+//                NSString *action = [payload objectForKey:@"action"];
+//                //NSString *strPushSyncID = [payload objectForKey:@"pushSyncID"];
+//                NSArray *data = [payload objectForKey:@"data"];
+//
+//
+//                if([type isEqualToString:@"OrderTaking"])
+//                {
+//                    NSString *className = type;
+//                    NSString *strNameID = [Utility getPrimaryKeyFromClassName:type];
+//
+//
+//                    Class class = NSClassFromString([NSString stringWithFormat:@"Shared%@",className]);
+//                    SEL selector = NSSelectorFromString([NSString stringWithFormat:@"shared%@",className]);
+//                    SEL selectorList = NSSelectorFromString([NSString stringWithFormat:@"%@List",[Utility makeFirstLetterLowerCase:className]]);
+//                    NSMutableArray *dataList = [[class performSelector:selector] performSelector:selectorList];
+//
+//
+//                    //insert,update,delete data
+//                    for(int i=0; i<[data count]; i++)
+//                    {
+//                        NSDictionary *jsonElement = data[i];
+//                        NSObject *object = [[NSClassFromString(className) alloc] init];
+//
+//                        unsigned int propertyCount = 0;
+//                        objc_property_t * properties = class_copyPropertyList([object class], &propertyCount);
+//
+//                        for (unsigned int i = 0; i < propertyCount; ++i)
+//                        {
+//                            objc_property_t property = properties[i];
+//                            const char * name = property_getName(property);
+//                            NSString *key = [NSString stringWithUTF8String:name];
+//
+//
+//                            NSString *dbColumnName = [Utility makeFirstLetterUpperCase:key];
+//                            if(!jsonElement[dbColumnName])
+//                            {
+//                                continue;
+//                            }
+//
+//
+//                            if([Utility isDateColumn:dbColumnName])
+//                            {
+//                                NSDate *date = [Utility stringToDate:jsonElement[dbColumnName] fromFormat:@"yyyy-MM-dd HH:mm:ss"];
+//                                [object setValue:date forKey:key];
+//                            }
+//                            else
+//                            {
+//                                [object setValue:jsonElement[dbColumnName] forKey:key];
+//                            }
+//                        }
+//
+//
+//                        if([action isEqualToString:@"i"])
+//                        {
+//                            OrderTaking *orderTaking = (OrderTaking *)object;
+//                            if(orderTaking.customerTableID == orderTakingVc.customerTable.customerTableID)
+//                            {
+//                                loadViewProcess = YES;
+//                                break;
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        else if([self.vc isMemberOfClass:[ReceiptViewController class]])
+//        {
+//            arrReferenceTable = @[@"OrderTaking",@"Menu",@"OrderNote",@"Member",@"Address",@"Receipt",@"Discount",@"Setting",@"UserAccount",@"RewardProgram",@"RewardPoint",@"ReceiptNo",@"ReceiptNoTax",@"ReceiptCustomerTable",@"TableTaking",@"BillPrint"];
+//
+//
+//
+//            //ถ้า receipt เป็น โต๊ะตัวเองถึงจะ loadviewprocess
+//            ReceiptViewController *receiptVc = (ReceiptViewController *)self.vc;
+//            for(int j=0; j<[items count]; j++)
+//            {
+//                NSDictionary *payload = items[j];
+//                NSString *type = [payload objectForKey:@"type"];
+//                NSString *action = [payload objectForKey:@"action"];
+//                //NSString *strPushSyncID = [payload objectForKey:@"pushSyncID"];
+//                NSArray *data = [payload objectForKey:@"data"];
+//
+//
+//                if([type isEqualToString:@"Receipt"])
+//                {
+//                    NSString *className = type;
+//                    NSString *strNameID = [Utility getPrimaryKeyFromClassName:type];
+//
+//
+//                    Class class = NSClassFromString([NSString stringWithFormat:@"Shared%@",className]);
+//                    SEL selector = NSSelectorFromString([NSString stringWithFormat:@"shared%@",className]);
+//                    SEL selectorList = NSSelectorFromString([NSString stringWithFormat:@"%@List",[Utility makeFirstLetterLowerCase:className]]);
+//                    NSMutableArray *dataList = [[class performSelector:selector] performSelector:selectorList];
+//
+//
+//                    //insert,update,delete data
+//                    for(int i=0; i<[data count]; i++)
+//                    {
+//                        NSDictionary *jsonElement = data[i];
+//                        NSObject *object = [[NSClassFromString(className) alloc] init];
+//
+//                        unsigned int propertyCount = 0;
+//                        objc_property_t * properties = class_copyPropertyList([object class], &propertyCount);
+//
+//                        for (unsigned int i = 0; i < propertyCount; ++i)
+//                        {
+//                            objc_property_t property = properties[i];
+//                            const char * name = property_getName(property);
+//                            NSString *key = [NSString stringWithUTF8String:name];
+//
+//
+//                            NSString *dbColumnName = [Utility makeFirstLetterUpperCase:key];
+//                            if(!jsonElement[dbColumnName])
+//                            {
+//                                continue;
+//                            }
+//
+//
+//                            if([Utility isDateColumn:dbColumnName])
+//                            {
+//                                NSDate *date = [Utility stringToDate:jsonElement[dbColumnName] fromFormat:@"yyyy-MM-dd HH:mm:ss"];
+//                                [object setValue:date forKey:key];
+//                            }
+//                            else
+//                            {
+//                                [object setValue:jsonElement[dbColumnName] forKey:key];
+//                            }
+//                        }
+//
+//
+//                        if([action isEqualToString:@"i"] || [action isEqualToString:@"u"])
+//                        {
+//                            Receipt *receipt = (Receipt *)object;
+//                            if(receipt.customerTableID == receiptVc.customerTable.customerTableID)
+//                            {
+//                                loadViewProcess = YES;
+//                                break;
+//                            }
+//                        }
+//                    }
+//                }
+//                else if([type isEqualToString:@"OrderTaking"])
+//                {
+//                    NSString *className = type;
+//                    NSString *strNameID = [Utility getPrimaryKeyFromClassName:type];
+//
+//
+//                    Class class = NSClassFromString([NSString stringWithFormat:@"Shared%@",className]);
+//                    SEL selector = NSSelectorFromString([NSString stringWithFormat:@"shared%@",className]);
+//                    SEL selectorList = NSSelectorFromString([NSString stringWithFormat:@"%@List",[Utility makeFirstLetterLowerCase:className]]);
+//                    NSMutableArray *dataList = [[class performSelector:selector] performSelector:selectorList];
+//
+//
+//                    //insert,update,delete data
+//                    for(int i=0; i<[data count]; i++)
+//                    {
+//                        NSDictionary *jsonElement = data[i];
+//                        NSObject *object = [[NSClassFromString(className) alloc] init];
+//
+//                        unsigned int propertyCount = 0;
+//                        objc_property_t * properties = class_copyPropertyList([object class], &propertyCount);
+//
+//                        for (unsigned int i = 0; i < propertyCount; ++i)
+//                        {
+//                            objc_property_t property = properties[i];
+//                            const char * name = property_getName(property);
+//                            NSString *key = [NSString stringWithUTF8String:name];
+//
+//
+//                            NSString *dbColumnName = [Utility makeFirstLetterUpperCase:key];
+//                            if(!jsonElement[dbColumnName])
+//                            {
+//                                continue;
+//                            }
+//
+//
+//                            if([Utility isDateColumn:dbColumnName])
+//                            {
+//                                NSDate *date = [Utility stringToDate:jsonElement[dbColumnName] fromFormat:@"yyyy-MM-dd HH:mm:ss"];
+//                                [object setValue:date forKey:key];
+//                            }
+//                            else
+//                            {
+//                                [object setValue:jsonElement[dbColumnName] forKey:key];
+//                            }
+//                        }
+//
+//
+//                        if([action isEqualToString:@"i"])
+//                        {
+//                            OrderTaking *orderTaking = (OrderTaking *)object;
+//                            if(orderTaking.customerTableID == receiptVc.customerTable.customerTableID)
+//                            {
+//                                loadViewProcess = YES;
+//                                NSLog(@"test loadviewprocess yes ordertaking");
+//                                break;
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        else if([self.vc isMemberOfClass:[CustomerTableViewController class]])
+//        {
+//            arrReferenceTable = @[@"UserAccount",@"TableTaking",@"OrderTaking",@"UserTabMenu",@"Board",@"Receipt"];
+//            loadViewProcess = YES;
+//        }
+//        else if([self.vc isMemberOfClass:[CustomerKitchenViewController class]])
+//        {
+//            arrReferenceTable = @[@"OrderTaking",@"Receipt",@"OrderNote",@"PrintReceipt"];
+//            loadViewProcess = YES;
+//        }
+//        NSArray *resultArray = [Utility intersectArray1:arrAllType array2:arrReferenceTable];
+//        if([resultArray count] > 0)
+//        {
+//            if(loadViewProcess)
+//            {
+//                {
+//                    SEL s = NSSelectorFromString(@"loadingOverlayView");
+//                    if([self.vc respondsToSelector:s])
+//                    {
+//                        [self.vc performSelector:s];
+//                    }
+//                }
+//
+//                {
+//                    SEL s = NSSelectorFromString(@"loadViewProcess");
+//                    if([self.vc respondsToSelector:s])
+//                    {
+//                        [self.vc performSelector:s];
+//                    }
+//                }
+//
+//                {
+//                    SEL s = NSSelectorFromString(@"removeOverlayViews");
+//                    if([self.vc respondsToSelector:s])
+//                    {
+//                        [self.vc performSelector:s];
+//                    }
+//                }
+//            }
+//        }
+//    }
 //}
 
 - (void)itemsUpdated
@@ -506,16 +1359,16 @@ void myExceptionHandler(NSException *exception)
     
     //load shared at the begining of everyday
     NSDictionary *todayLoadShared = [[NSUserDefaults standardUserDefaults] dictionaryForKey:@"todayLoadShared"];
-    NSString *strCurrentDate = [Utility dateToString:[NSDate date] toFormat:@"yyyy-MM-dd"];
+    NSString *strCurrentDate = [Utility dateToString:[Utility currentDateTime] toFormat:@"yyyy-MM-dd"];
     NSString *alreadyLoaded = [todayLoadShared objectForKey:strCurrentDate];
     
     if(!alreadyLoaded)
     {
         //download dbMaster
-        UINavigationController * navigationController = self.navController;
-        UIViewController *viewController = navigationController.visibleViewController;
+//        UINavigationController * navigationController = self.navController;
+//        UIViewController *viewController = navigationController.visibleViewController;
         SEL s = NSSelectorFromString(@"loadingOverlayView");
-        [viewController performSelector:s];
+        [self.vc performSelector:s];
         
         [_homeModel downloadItems:dbMaster];
         [[NSUserDefaults standardUserDefaults] setObject:[NSDictionary dictionaryWithObject:@"1" forKey:strCurrentDate] forKey:@"todayLoadShared"];
@@ -526,9 +1379,12 @@ void myExceptionHandler(NSException *exception)
         //check timesynced = null where devicetoken = [Utility deviceToken];
         PushSync *pushSync = [[PushSync alloc]init];
         pushSync.deviceToken = [Utility deviceToken];
-        [_homeModel syncItems:dbPushSync withData:pushSync];
+        [_homeModelSyncItems syncItems:dbPushSync withData:pushSync];
         NSLog(@"syncitems");
     }
+    
+    NSNumber *receiptID = [NSNumber numberWithInteger:_testReceiptID];
+//    [_homeModel downloadItems:dbJummumReceipt withData:receiptID];
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application {
@@ -542,30 +1398,82 @@ void myExceptionHandler(NSException *exception)
 
 -(void)itemsDownloaded:(NSArray *)items
 {
-    UINavigationController * navigationController = self.navController;
-    UIViewController *viewController = navigationController.visibleViewController;
+    if(_homeModel.propCurrentDB == dbMaster)
     {
-        PushSync *pushSync = [[PushSync alloc]init];
-        pushSync.deviceToken = [Utility deviceToken];
-        [_homeModel updateItems:dbPushSyncUpdateByDeviceToken withData:pushSync actionScreen:@"update synced time by device token"];
+        {
+            PushSync *pushSync = [[PushSync alloc]init];
+            pushSync.deviceToken = [Utility deviceToken];
+            [_homeModelPushSyncUpdateByDevice updateItems:dbPushSyncUpdateByDeviceToken withData:pushSync actionScreen:@"update synced time by device token"];
+        }
+        
+        
+        [Utility itemsDownloaded:items];
+        {
+            SEL s = NSSelectorFromString(@"loadViewProcess");
+            [self.vc performSelector:s];
+        }
+        {
+            SEL s = NSSelectorFromString(@"removeOverlayViews");
+            [self.vc performSelector:s];
+        }
     }
-    
-    
-    [Utility itemsDownloaded:items];
+    else if(_homeModel.propCurrentDB == dbJummumReceipt)
     {
-        SEL s = NSSelectorFromString(@"removeOverlayViews");
-        [viewController performSelector:s];
+        for(NSArray *itemList in items)
+        {
+            for(NSObject *object in itemList)
+            {
+                [Utility addObjectIfNotDuplicate:object];
+            }
+        }
+
+
+        Receipt *receipt = items[0][0];
+        
+        
+        
+        //************Print kitchen bill
+        NSMutableArray *receiptList = [[NSMutableArray alloc]init];
+        [receiptList addObject:receipt];
+        CustomerKitchenViewController *vc = (CustomerKitchenViewController *)self.vc;
+        [vc printReceiptKitchenBill:receiptList];
+        //************
     }
+    else if(_homeModel.propCurrentDB == dbJummumReceiptUpdate)
     {
-        SEL s = NSSelectorFromString(@"loadViewProcess");
-        [viewController performSelector:s];
+        NSMutableArray *receiptList = items[0];
+        NSMutableArray *disputeList = items[3];
+        if([receiptList count]>0)
+        {
+            Receipt *receipt = receiptList[0];
+            [Receipt updateStatus:receipt];
+            
+            
+            if([self.vc isMemberOfClass:[CustomerKitchenViewController class]])
+            {
+                CustomerKitchenViewController *vc = (CustomerKitchenViewController *)self.vc;
+                [vc setReceiptList];
+                [vc.tbvData reloadData];
+            }
+            else if([self.vc isMemberOfClass:[OrderDetailViewController class]])
+            {
+                OrderDetailViewController *vc = (OrderDetailViewController *)self.vc;
+                [vc.tbvData reloadData];
+            }
+        }
+        if([disputeList count] > 0)
+        {
+            NSMutableArray *dataList = [[NSMutableArray alloc]init];
+            [dataList addObject:disputeList];
+            [Utility addToSharedDataList:dataList];            
+        }
     }
 }
 
 - (void)itemsFail
 {
-    UINavigationController * navigationController = self.navController;
-    UIViewController *viewController = navigationController.visibleViewController;
+//    UINavigationController * navigationController = self.navController;
+//    UIViewController *viewController = navigationController.visibleViewController;
     
     UIAlertController* alert = [UIAlertController alertControllerWithTitle:[Utility getConnectionLostTitle]
                                                                    message:[Utility getConnectionLostMessage]
@@ -575,20 +1483,20 @@ void myExceptionHandler(NSException *exception)
                                                           handler:^(UIAlertAction * action)
                                     {
                                         SEL s = NSSelectorFromString(@"loadingOverlayView");
-                                        [viewController performSelector:s];
+                                        [self.vc performSelector:s];
                                         [_homeModel downloadItems:dbMaster];
                                     }];
     
     [alert addAction:defaultAction];
     dispatch_async(dispatch_get_main_queue(),^ {
-        [viewController presentViewController:alert animated:YES completion:nil];
+        [self.vc presentViewController:alert animated:YES completion:nil];
     });
 }
 
 - (void) connectionFail
 {
-    UINavigationController * navigationController = self.navController;
-    UIViewController *viewController = navigationController.visibleViewController;
+//    UINavigationController * navigationController = self.navController;
+//    UIViewController *viewController = navigationController.visibleViewController;
     
     UIAlertController* alert = [UIAlertController alertControllerWithTitle:[Utility subjectNoConnection]
                                                                    message:[Utility detailNoConnection]
@@ -601,7 +1509,7 @@ void myExceptionHandler(NSException *exception)
     
     [alert addAction:defaultAction];
     dispatch_async(dispatch_get_main_queue(),^ {
-        [viewController presentViewController:alert animated:YES completion:nil];
+        [self.vc presentViewController:alert animated:YES completion:nil];
     } );
 }
 

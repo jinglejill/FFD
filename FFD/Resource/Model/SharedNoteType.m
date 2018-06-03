@@ -9,5 +9,16 @@
 #import "SharedNoteType.h"
 
 @implementation SharedNoteType
+@synthesize noteTypeList;
+
++(SharedNoteType *)sharedNoteType {
+    static dispatch_once_t pred;
+    static SharedNoteType *shared = nil;
+    dispatch_once(&pred, ^{
+        shared = [[SharedNoteType alloc] init];
+        shared.noteTypeList = [[NSMutableArray alloc]init];
+    });
+    return shared;
+}
 
 @end

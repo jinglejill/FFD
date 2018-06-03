@@ -7,7 +7,11 @@
 //
 
 #import "CustomViewController.h"
+#import "CorrectIncorrectCancelView.h"
 
-@interface MoneyCheckOpenViewController : CustomViewController
 
+@interface MoneyCheckOpenViewController : CustomViewController<UITableViewDelegate,UITableViewDataSource>
+@property (strong, nonatomic) IBOutlet UITableView *tbvMoneyCheckOpen;
+@property (strong, nonatomic) CorrectIncorrectCancelView *vwCorrectIncorrectCancel;
+@property (nonatomic) NSInteger period;
 @end

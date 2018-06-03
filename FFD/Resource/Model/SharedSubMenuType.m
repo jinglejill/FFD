@@ -9,5 +9,15 @@
 #import "SharedSubMenuType.h"
 
 @implementation SharedSubMenuType
+@synthesize subMenuTypeList;
 
++(SharedSubMenuType *)sharedSubMenuType {
+    static dispatch_once_t pred;
+    static SharedSubMenuType *shared = nil;
+    dispatch_once(&pred, ^{
+        shared = [[SharedSubMenuType alloc] init];
+        shared.subMenuTypeList = [[NSMutableArray alloc]init];
+    });
+    return shared;
+}
 @end

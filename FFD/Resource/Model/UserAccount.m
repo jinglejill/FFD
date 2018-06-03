@@ -14,24 +14,21 @@
 
 @implementation UserAccount
 
--(UserAccount *)initWithUsername:(NSString *)username password:(NSString *)password deviceToken:(NSString *)deviceToken fullName:(NSString *)fullName nickName:(NSString *)nickName email:(NSString *)email phoneNo:(NSString *)phoneNo lineID:(NSString *)lineID
+-(UserAccount *)initWithUsername:(NSString *)username password:(NSString *)password deviceToken:(NSString *)deviceToken fullName:(NSString *)fullName nickName:(NSString *)nickName email:(NSString *)email phoneNo:(NSString *)phoneNo lineID:(NSString *)lineID roleID:(NSInteger)roleID
 {
     self = [super init];
     if(self)
     {
-        NSUInteger fieldHash = [password hash];
-        NSString *fieldString = [KeychainWrapper securedSHA256DigestHashForPIN:fieldHash];
-        
-        
         self.userAccountID = [UserAccount getNextID];
         self.username = username;
-        self.password = fieldString;
+        self.password = password;
         self.deviceToken = deviceToken;
         self.fullName = fullName;
         self.nickName = nickName;
         self.email = email;
         self.phoneNo = phoneNo;
         self.lineID = lineID;
+        self.roleID = roleID;
         self.modifiedUser = [Utility modifiedUser];
         self.modifiedDate = [Utility currentDateTime];
     }
@@ -40,14 +37,13 @@
 
 +(NSInteger)getNextID
 {
-    NSString *strNameID;
-    NSMutableArray *dataList;
-    dataList = [SharedUserAccount sharedUserAccount].userAccountList;
-    strNameID = @"userAccountID";
+    NSString *primaryKeyName = @"userAccountID";
+    NSString *propertyName = [NSString stringWithFormat:@"_%@",primaryKeyName];
+    NSMutableArray *dataList = [SharedUserAccount sharedUserAccount].userAccountList;
     
-    NSString *strSortID = [NSString stringWithFormat:@"_%@",strNameID];
-    NSSortDescriptor *sortDescriptor1 = [[NSSortDescriptor alloc] initWithKey:strSortID ascending:NO];
-    NSArray *sortDescriptors = [NSArray arrayWithObjects:sortDescriptor1, nil];
+    
+    NSSortDescriptor *sortDescriptor = [[NSSortDescriptor alloc] initWithKey:propertyName ascending:NO];
+    NSArray *sortDescriptors = [NSArray arrayWithObjects:sortDescriptor, nil];
     NSArray *sortArray = [dataList sortedArrayUsingDescriptors:sortDescriptors];
     dataList = [sortArray mutableCopy];
     
@@ -57,7 +53,7 @@
     }
     else
     {
-        id value = [dataList[0] valueForKey:strNameID];
+        id value = [dataList[0] valueForKey:primaryKeyName];
         NSString *strMaxID = value;
         
         return [strMaxID intValue]+1;

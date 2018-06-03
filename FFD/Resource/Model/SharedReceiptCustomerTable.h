@@ -9,5 +9,7 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedReceiptCustomerTable : NSObject
+@property (retain, nonatomic) NSMutableArray *receiptCustomerTableList;
 
++ (SharedReceiptCustomerTable *)sharedReceiptCustomerTable;
 @end

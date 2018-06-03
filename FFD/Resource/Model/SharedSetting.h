@@ -9,5 +9,7 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedSetting : NSObject
+@property (retain, nonatomic) NSMutableArray *settingList;
 
++ (SharedSetting *)sharedSetting;
 @end

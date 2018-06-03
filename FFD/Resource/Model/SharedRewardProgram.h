@@ -9,5 +9,7 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedRewardProgram : NSObject
+@property (retain, nonatomic) NSMutableArray *rewardProgramList;
 
++ (SharedRewardProgram *)sharedRewardProgram;
 @end

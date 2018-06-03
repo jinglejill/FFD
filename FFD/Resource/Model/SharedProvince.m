@@ -9,5 +9,15 @@
 #import "SharedProvince.h"
 
 @implementation SharedProvince
+@synthesize provinceList;
 
++(SharedProvince *)sharedProvince {
+    static dispatch_once_t pred;
+    static SharedProvince *shared = nil;
+    dispatch_once(&pred, ^{
+        shared = [[SharedProvince alloc] init];
+        shared.provinceList = [[NSMutableArray alloc]init];
+    });
+    return shared;
+}
 @end

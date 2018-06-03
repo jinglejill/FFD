@@ -11,6 +11,7 @@
 @interface CustomCollectionViewCellMenuWithTakeAway : UICollectionViewCell
 @property (strong, nonatomic) IBOutlet UIButton *btnMenuName;
 @property (strong, nonatomic) IBOutlet UIButton *btnTakeAway;
-
+@property (strong, nonatomic) IBOutlet UILongPressGestureRecognizer *longPressGestureRecognizer;
+@property (strong, nonatomic) IBOutlet UIView *vwRoundedCorner;
 
 @end

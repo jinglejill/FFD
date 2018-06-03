@@ -9,5 +9,15 @@
 #import "SharedZipCode.h"
 
 @implementation SharedZipCode
+@synthesize zipCodeList;
 
++(SharedZipCode *)sharedZipCode {
+    static dispatch_once_t pred;
+    static SharedZipCode *shared = nil;
+    dispatch_once(&pred, ^{
+        shared = [[SharedZipCode alloc] init];
+        shared.zipCodeList = [[NSMutableArray alloc]init];
+    });
+    return shared;
+}
 @end

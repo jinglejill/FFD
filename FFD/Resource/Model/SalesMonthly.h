@@ -9,5 +9,7 @@
 #import <Foundation/Foundation.h>
 
 @interface SalesMonthly : NSObject
-
+@property (retain, nonatomic) NSString *month;
+@property (retain, nonatomic) NSDate * salesDate;
+@property (nonatomic) float sales;
 @end

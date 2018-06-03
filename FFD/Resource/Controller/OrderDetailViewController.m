@@ -7,7 +7,7 @@
 //
 
 #import "OrderDetailViewController.h"
-//#import "ConfirmDisputeViewController.h"
+#import "ConfirmDisputeViewController.h"
 #import "CustomTableViewCellReceiptSummary.h"
 #import "CustomTableViewCellOrderSummary.h"
 #import "CustomTableViewCellTotal.h"
@@ -32,6 +32,7 @@
     Branch *_receiptBranch;
     NSInteger _fromType;//1=cancel,2=dispute
     float _accumHeight;
+    HomeModel *_homeModelDelivered;
 }
 @end
 
@@ -63,6 +64,15 @@ static NSString * const reuseIdentifierDisputeDetail = @"CustomTableViewCellDisp
     cell.btnValue.enabled = YES;
     
 //    [self.homeModel downloadItems:dbReceipt withData:receipt];
+}
+
+-(void)loadView
+{
+    [super loadView];
+    
+    
+    _homeModelDelivered = [[HomeModel alloc]init];
+    _homeModelDelivered.delegate = self;
 }
 
 -(void)viewWillAppear:(BOOL)animated
@@ -144,7 +154,7 @@ static NSString * const reuseIdentifierDisputeDetail = @"CustomTableViewCellDisp
             {
                 return 2;
             }
-            else if(receipt.status == 7 || receipt.status == 12)
+            else if(receipt.status == 7)
             {
                 return 1+3;
             }
@@ -152,13 +162,21 @@ static NSString * const reuseIdentifierDisputeDetail = @"CustomTableViewCellDisp
             {
                 return 1+4;
             }
-            else if(receipt.status == 9 || receipt.status == 10)
+            else if(receipt.status == 9 || receipt.status == 10 || receipt.status == 11)
             {
-                return 1;
+                return 1+1;
             }
-            else if(receipt.status == 11)
+            else if(receipt.status == 12)
             {
-                return 2;
+                return 1+1;
+            }
+            else if(receipt.status == 13)
+            {
+                return 1+4;
+            }
+            else if(receipt.status == 14)
+            {
+                return 1+1;
             }
         }
     }
@@ -209,8 +227,22 @@ static NSString * const reuseIdentifierDisputeDetail = @"CustomTableViewCellDisp
             cell.tbvOrderDetail.dataSource = self;
             cell.tbvOrderDetail.tag = receipt.receiptID;
             [cell.tbvOrderDetail reloadData];
-            [cell.btnOrderItAgain addTarget:self action:@selector(orderItAgain:) forControlEvents:UIControlEventTouchUpInside];
-            [cell.btnOrderItAgain setTitle:@"Print" forState:UIControlStateNormal];
+            if(receipt.status == 2)
+            {
+                cell.btnOrderItAgain.hidden = NO;
+                [cell.btnOrderItAgain addTarget:self action:@selector(printIndividualReceipt:) forControlEvents:UIControlEventTouchUpInside];
+                [cell.btnOrderItAgain setTitle:@"Print" forState:UIControlStateNormal];
+            }
+            else if(receipt.status == 5)
+            {
+                cell.btnOrderItAgain.hidden = NO;
+                [cell.btnOrderItAgain addTarget:self action:@selector(changeToDeliveredStatus:) forControlEvents:UIControlEventTouchUpInside];
+                [cell.btnOrderItAgain setTitle:@"Delivered" forState:UIControlStateNormal];
+            }
+            else
+            {
+                cell.btnOrderItAgain.hidden = YES;
+            }
             
             
             return cell;
@@ -698,20 +730,13 @@ static NSString * const reuseIdentifierDisputeDetail = @"CustomTableViewCellDisp
                         cell.selectionStyle = UITableViewCellSelectionStyleNone;
                         
                         
-                        
-                        if(receipt.status == 2)
+
+                        if(receipt.status == 2 || receipt.status == 5 || receipt.status == 6)
                         {
                             cell.btnValue.hidden = NO;
-                            [cell.btnValue setTitle:@"Cancel order" forState:UIControlStateNormal];
+                            [cell.btnValue setTitle:@"Claim & refund" forState:UIControlStateNormal];
                             cell.btnValue.backgroundColor = mRed;
-                            [cell.btnValue addTarget:self action:@selector(cancelOrder:) forControlEvents:UIControlEventTouchUpInside];
-                        }
-                        else if(receipt.status == 5 || receipt.status == 6)
-                        {
-                            cell.btnValue.hidden = NO;
-                            [cell.btnValue setTitle:@"Open dispute" forState:UIControlStateNormal];
-                            cell.btnValue.backgroundColor = mRed;
-                            [cell.btnValue addTarget:self action:@selector(disputeOrder:) forControlEvents:UIControlEventTouchUpInside];
+                            [cell.btnValue addTarget:self action:@selector(moneyRefund:) forControlEvents:UIControlEventTouchUpInside];
                         }
                         
                         
@@ -727,8 +752,8 @@ static NSString * const reuseIdentifierDisputeDetail = @"CustomTableViewCellDisp
                         
                         
                         
-                        cell.lblRemark.tintColor = mRed;
-                        cell.lblRemark.text = @"ลูกค้าของคุณต้องการยกเลิกบิลนี้  ด้วยเหตุผลด้านล่างนี้ กรุณากดยืนยันเพื่อ Refund เงินคืนลูกค้า";
+                        cell.lblRemark.textColor = mRed;
+                        cell.lblRemark.text = @"ลูกค้าของคุณต้องการยกเลิกบิลนี้  ด้วยเหตุผลด้านล่างนี้ กรุณากด Confirm เพื่อ Refund เงินคืนลูกค้า";
                         [cell.lblRemark sizeToFit];
                         cell.lblRemarkHeight.constant = cell.lblRemark.frame.size.height;
                         
@@ -800,14 +825,14 @@ static NSString * const reuseIdentifierDisputeDetail = @"CustomTableViewCellDisp
                         
                         
                         
-                        cell.lblRemark.tintColor = mRed;
-                        cell.lblRemark.text = @"ลูกค้าของคุณ open dispute ด้วยเหตุผลด้านล่างนี้ กรุณากดยืนยันเพื่อ Refund เงินคืนลูกค้า";
+                        cell.lblRemark.textColor = mRed;
+                        cell.lblRemark.text = @"ลูกค้าของคุณ Open dispute ด้วยเหตุผลด้านล่างนี้ กรุณากด Confirm เพื่อ Refund เงินคืนลูกค้า หรือหากต้องการแก้ไขรายการกรุณากด Negotiate";
                         [cell.lblRemark sizeToFit];
                         cell.lblRemarkHeight.constant = cell.lblRemark.frame.size.height;
                         
                         
                         
-                        Dispute *dispute = [Dispute getDisputeWithReceiptID:receipt.receiptID type:1];
+                        Dispute *dispute = [Dispute getDisputeWithReceiptID:receipt.receiptID type:2];
                         DisputeReason *disputeReason = [DisputeReason getDisputeReason:dispute.disputeReasonID];
                         cell.lblReason.attributedText = [self setAttributedString:@"เหตุผล: " text:disputeReason.text];
                         [cell.lblReason sizeToFit];
@@ -815,16 +840,15 @@ static NSString * const reuseIdentifierDisputeDetail = @"CustomTableViewCellDisp
                         
                         
                         
-                        float totalAmount = [Receipt getTotalAmount:receipt];
-                        NSString *strTotalAmount = [Utility formatDecimal:totalAmount withMinFraction:2 andMaxFraction:2];
+                        NSString *strTotalAmount = [Utility formatDecimal:dispute.refundAmount withMinFraction:2 andMaxFraction:2];
                         strTotalAmount = [NSString stringWithFormat:@"%@ บาท",strTotalAmount];
                         cell.lblAmount.attributedText = [self setAttributedString:@"จำนวนเงินที่ขอคืน: " text:strTotalAmount];
                         
                         
-                        cell.lblReasonDetail.attributedText = [self setAttributedString:@"เหตุผล: " text:dispute.detail];
+                        cell.lblReasonDetail.attributedText = [self setAttributedString:@"รายละเอียดเหตุผล: " text:dispute.detail];
                         [cell.lblReasonDetail sizeToFit];
-                        cell.lblReasonDetailTop.constant = cell.lblReasonDetail.frame.size.height;
-                        cell.lblReasonDetailHeight.constant = 8;
+                        cell.lblReasonDetailTop.constant = 8;
+                        cell.lblReasonDetailHeight.constant = cell.lblReasonDetail.frame.size.height;
                         
                         
                         cell.lblPhoneNo.attributedText = [self setAttributedString:@"เบอร์โทรติดต่อ: " text:[Utility setPhoneNoFormat:dispute.phoneNo]];
@@ -881,6 +905,309 @@ static NSString * const reuseIdentifierDisputeDetail = @"CustomTableViewCellDisp
                         
                         return cell;
                     }
+                }
+                else if(receipt.status == 9)
+                {
+                    CustomTableViewCellDisputeDetail *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifierDisputeDetail];
+                    cell.selectionStyle = UITableViewCellSelectionStyleNone;
+                    
+                    
+                    
+                    cell.lblRemark.textColor = mRed;
+                    cell.lblRemark.text = @"คำร้องขอยกเลิกออเดอร์เสร็จสิ้น";
+                    [cell.lblRemark sizeToFit];
+                    cell.lblRemarkHeight.constant = cell.lblRemark.frame.size.height;
+                    
+                    
+                    
+                    Dispute *dispute = [Dispute getDisputeWithReceiptID:receipt.receiptID type:1];
+                    DisputeReason *disputeReason = [DisputeReason getDisputeReason:dispute.disputeReasonID];
+                    cell.lblReason.attributedText = [self setAttributedString:@"เหตุผล: " text:disputeReason.text];
+                    [cell.lblReason sizeToFit];
+                    cell.lblReasonHeight.constant = cell.lblReason.frame.size.height;
+                    
+                    
+                    
+                    float totalAmount = [Receipt getTotalAmount:receipt];
+                    NSString *strTotalAmount = [Utility formatDecimal:totalAmount withMinFraction:2 andMaxFraction:2];
+                    strTotalAmount = [NSString stringWithFormat:@"%@ บาท",strTotalAmount];
+                    cell.lblAmount.attributedText = [self setAttributedString:@"จำนวนเงินที่ขอคืน: " text:strTotalAmount];
+                    
+                    
+                    cell.lblReasonDetailHeight.constant = 0;
+                    cell.lblReasonDetailTop.constant = 0;
+                    
+                    
+                    cell.lblPhoneNo.attributedText = [self setAttributedString:@"เบอร์โทรติดต่อ: " text:[Utility setPhoneNoFormat:dispute.phoneNo]];
+                    [cell.lblPhoneNo sizeToFit];
+                    cell.lblPhoneNoHeight.constant = cell.lblPhoneNo.frame.size.height;
+                    
+                    return cell;
+                }
+                else if(receipt.status == 10)
+                {
+                    CustomTableViewCellDisputeDetail *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifierDisputeDetail];
+                    cell.selectionStyle = UITableViewCellSelectionStyleNone;
+                    
+                    
+                    
+                    cell.lblRemark.textColor = mRed;
+                    cell.lblRemark.text = @"กระบวนการ Open dispute เสร็จสิ้น";
+                    [cell.lblRemark sizeToFit];
+                    cell.lblRemarkHeight.constant = cell.lblRemark.frame.size.height;
+                    
+                    
+                    
+                    Dispute *dispute = [Dispute getDisputeWithReceiptID:receipt.receiptID type:2];
+                    DisputeReason *disputeReason = [DisputeReason getDisputeReason:dispute.disputeReasonID];
+                    cell.lblReason.attributedText = [self setAttributedString:@"เหตุผล: " text:disputeReason.text];
+                    [cell.lblReason sizeToFit];
+                    cell.lblReasonHeight.constant = cell.lblReason.frame.size.height;
+                    
+                    
+                    
+                    NSString *strTotalAmount = [Utility formatDecimal:dispute.refundAmount withMinFraction:2 andMaxFraction:2];
+                    strTotalAmount = [NSString stringWithFormat:@"%@ บาท",strTotalAmount];
+                    cell.lblAmount.attributedText = [self setAttributedString:@"จำนวนเงินที่ขอคืน: " text:strTotalAmount];
+                    
+                    
+                    cell.lblReasonDetail.attributedText = [self setAttributedString:@"รายละเอียดเหตุผล: " text:dispute.detail];
+                    [cell.lblReasonDetail sizeToFit];
+                    cell.lblReasonDetailTop.constant = 8;
+                    cell.lblReasonDetailHeight.constant = cell.lblReasonDetail.frame.size.height;
+                    
+                    
+                    cell.lblPhoneNo.attributedText = [self setAttributedString:@"เบอร์โทรติดต่อ: " text:[Utility setPhoneNoFormat:dispute.phoneNo]];
+                    [cell.lblPhoneNo sizeToFit];
+                    cell.lblPhoneNoHeight.constant = cell.lblPhoneNo.frame.size.height;
+                    
+                    return cell;
+                }
+                else if(receipt.status == 11)
+                {
+                    CustomTableViewCellDisputeDetail *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifierDisputeDetail];
+                    cell.selectionStyle = UITableViewCellSelectionStyleNone;
+                    
+                    
+                    
+                    cell.lblRemark.textColor = mRed;
+                    cell.lblRemark.text = @"Open dispute ที่ส่งไปกำลังดำเนินการอยู่ จะมีเจ้าหน้าที่ติดต่อกลับไปภายใน 24 ชม.";
+                    [cell.lblRemark sizeToFit];
+                    cell.lblRemarkHeight.constant = cell.lblRemark.frame.size.height;
+                    
+                    
+                    
+                    NSInteger statusBeforeLast = [Receipt getStateBeforeLast:receipt];
+                    if(statusBeforeLast == 8)
+                    {
+                        Dispute *dispute = [Dispute getDisputeWithReceiptID:receipt.receiptID type:2];
+                        DisputeReason *disputeReason = [DisputeReason getDisputeReason:dispute.disputeReasonID];
+                        cell.lblReason.attributedText = [self setAttributedString:@"เหตุผล: " text:disputeReason.text];
+                        [cell.lblReason sizeToFit];
+                        cell.lblReasonHeight.constant = cell.lblReason.frame.size.height;
+                        
+                        
+                        
+                        NSString *strTotalAmount = [Utility formatDecimal:dispute.refundAmount withMinFraction:2 andMaxFraction:2];
+                        strTotalAmount = [NSString stringWithFormat:@"%@ บาท",strTotalAmount];
+                        cell.lblAmount.attributedText = [self setAttributedString:@"จำนวนเงินที่ขอคืน: " text:strTotalAmount];
+                        
+                        
+                        cell.lblReasonDetail.attributedText = [self setAttributedString:@"รายละเอียดเหตุผล: " text:dispute.detail];
+                        [cell.lblReasonDetail sizeToFit];
+                        cell.lblReasonDetailTop.constant = 8;
+                        cell.lblReasonDetailHeight.constant = cell.lblReasonDetail.frame.size.height;
+                        
+                        
+                        cell.lblPhoneNo.attributedText = [self setAttributedString:@"เบอร์โทรติดต่อ: " text:[Utility setPhoneNoFormat:dispute.phoneNo]];
+                        [cell.lblPhoneNo sizeToFit];
+                        cell.lblPhoneNoHeight.constant = cell.lblPhoneNo.frame.size.height;
+                    }
+                    else if(statusBeforeLast == 12 || statusBeforeLast == 13)
+                    {
+                        Dispute *dispute = [Dispute getDisputeWithReceiptID:receipt.receiptID type:5];
+                        cell.lblReasonTop.constant = 0;
+                        cell.lblReasonHeight.constant = 0;
+                        
+                        
+                        
+                        NSString *strTotalAmount = [Utility formatDecimal:dispute.refundAmount withMinFraction:2 andMaxFraction:2];
+                        strTotalAmount = [NSString stringWithFormat:@"%@ บาท",strTotalAmount];
+                        cell.lblAmount.attributedText = [self setAttributedString:@"จำนวนเงินที่ขอคืน: " text:strTotalAmount];
+                        
+                        
+                        cell.lblReasonDetail.attributedText = [self setAttributedString:@"รายละเอียดเหตุผล: " text:dispute.detail];
+                        [cell.lblReasonDetail sizeToFit];
+                        cell.lblReasonDetailTop.constant = 8;
+                        cell.lblReasonDetailHeight.constant = cell.lblReasonDetail.frame.size.height;
+                        
+                        
+                        cell.lblPhoneNoTop.constant = 0;
+                        cell.lblPhoneNoHeight.constant = 0;
+                    }
+                    
+                    return cell;
+                }
+                else if(receipt.status == 12)
+                {
+                    CustomTableViewCellDisputeDetail *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifierDisputeDetail];
+                    cell.selectionStyle = UITableViewCellSelectionStyleNone;
+                    
+                    
+                    
+                    cell.lblRemark.textColor = mRed;
+                    cell.lblRemark.text = @"Open dispute ได้มีการแก้ไขตามด้านล่าง โปรดรอการยืนยันจากลูกค้าสักครู่";
+                    [cell.lblRemark sizeToFit];
+                    cell.lblRemarkHeight.constant = cell.lblRemark.frame.size.height;
+                    
+                    
+                    
+                    Dispute *dispute = [Dispute getDisputeWithReceiptID:receipt.receiptID type:5];
+                    cell.lblReasonTop.constant = 0;
+                    cell.lblReasonHeight.constant = 0;
+                    
+                    
+                    
+                    NSString *strTotalAmount = [Utility formatDecimal:dispute.refundAmount withMinFraction:2 andMaxFraction:2];
+                    strTotalAmount = [NSString stringWithFormat:@"%@ บาท",strTotalAmount];
+                    cell.lblAmount.attributedText = [self setAttributedString:@"จำนวนเงินที่ขอคืน: " text:strTotalAmount];
+                    
+                    
+                    cell.lblReasonDetail.attributedText = [self setAttributedString:@"รายละเอียดเหตุผล: " text:dispute.detail];
+                    [cell.lblReasonDetail sizeToFit];
+                    cell.lblReasonDetailTop.constant = 8;
+                    cell.lblReasonDetailHeight.constant = cell.lblReasonDetail.frame.size.height;
+                    
+                    
+                    
+                    cell.lblPhoneNoTop.constant = 0;
+                    cell.lblPhoneNoHeight.constant = 0;
+                    
+                    return cell;
+                }
+                else if(receipt.status == 13)
+                {
+                    if(item == 1)
+                    {
+                        CustomTableViewCellDisputeDetail *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifierDisputeDetail];
+                        cell.selectionStyle = UITableViewCellSelectionStyleNone;
+                        
+                        
+                        
+                        cell.lblRemark.textColor = mRed;
+                        cell.lblRemark.text = @"หลังจากคุยกับเจ้าหน้าที่ Jummum แล้ว มีการแก้ไขจำนวนเงิน refund ใหม่ ตามด้านล่างนี้ กรุณากด Confirm เพื่อ Refund เงินคืนลูกค้า หรือหากต้องการแก้ไขรายการกรุณากด Negotiate";
+                        [cell.lblRemark sizeToFit];
+                        cell.lblRemarkHeight.constant = cell.lblRemark.frame.size.height;
+                        
+                        
+                        
+                        Dispute *dispute = [Dispute getDisputeWithReceiptID:receipt.receiptID type:5];
+                        cell.lblReasonTop.constant = 0;
+                        cell.lblReasonHeight.constant = 0;
+                        
+                        
+                        
+                        NSString *strTotalAmount = [Utility formatDecimal:dispute.refundAmount withMinFraction:2 andMaxFraction:2];
+                        strTotalAmount = [NSString stringWithFormat:@"%@ บาท",strTotalAmount];
+                        cell.lblAmount.attributedText = [self setAttributedString:@"จำนวนเงินที่ขอคืน: " text:strTotalAmount];
+                        
+                        
+                        cell.lblReasonDetail.attributedText = [self setAttributedString:@"รายละเอียดเหตุผล: " text:dispute.detail];
+                        [cell.lblReasonDetail sizeToFit];
+                        cell.lblReasonDetailTop.constant = 8;
+                        cell.lblReasonDetailHeight.constant = cell.lblReasonDetail.frame.size.height;
+                        
+                        
+                        cell.lblPhoneNoTop.constant = 0;
+                        cell.lblPhoneNoHeight.constant = 0;
+                        
+                        
+                        return cell;
+                    }
+                    else if(item == 2)
+                    {
+                        CustomTableViewCellButton2 *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifierButton2];
+                        cell.selectionStyle = UITableViewCellSelectionStyleNone;
+                        
+                        
+                        
+                        cell.btnValue.hidden = NO;
+                        [cell.btnValue setTitle:@"Confirm" forState:UIControlStateNormal];
+                        cell.btnValue.backgroundColor = mGreen;
+                        [cell.btnValue setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+                        [cell.btnValue addTarget:self action:@selector(confirmNegotiate:) forControlEvents:UIControlEventTouchUpInside];
+                        
+                        
+                        return cell;
+                    }
+                    else if(item == 3)
+                    {
+                        CustomTableViewCellButton2 *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifierButton2];
+                        cell.selectionStyle = UITableViewCellSelectionStyleNone;
+                        
+                        
+                        
+                        cell.btnValue.hidden = NO;
+                        [cell.btnValue setTitle:@"Negotiate" forState:UIControlStateNormal];
+                        cell.btnValue.backgroundColor = mRed;
+                        [cell.btnValue setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+                        [cell.btnValue addTarget:self action:@selector(negotiate:) forControlEvents:UIControlEventTouchUpInside];
+                        
+                        
+                        return cell;
+                    }
+                    else if(item == 4)
+                    {
+                        CustomTableViewCellButton2 *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifierButton2];
+                        cell.selectionStyle = UITableViewCellSelectionStyleNone;
+                        
+                        
+                        
+                        cell.btnValue.hidden = NO;
+                        [cell.btnValue setTitle:@"Cancel" forState:UIControlStateNormal];
+                        cell.btnValue.backgroundColor = [UIColor groupTableViewBackgroundColor];
+                        [cell.btnValue setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
+                        [cell.btnValue addTarget:self action:@selector(goBack:) forControlEvents:UIControlEventTouchUpInside];
+                        
+                        
+                        return cell;
+                    }
+                }
+                else if(receipt.status == 14)
+                {
+                    CustomTableViewCellDisputeDetail *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifierDisputeDetail];
+                    cell.selectionStyle = UITableViewCellSelectionStyleNone;
+                    
+                    
+                    
+                    cell.lblRemark.textColor = mRed;
+                    cell.lblRemark.text = @"กระบวนการ Open dispute ดำเนินการเสร็จสิ้นแล้ว";
+                    [cell.lblRemark sizeToFit];
+                    cell.lblRemarkHeight.constant = cell.lblRemark.frame.size.height;
+                    
+                    
+                    
+                    Dispute *dispute = [Dispute getDisputeWithReceiptID:receipt.receiptID type:5];
+                    cell.lblReasonTop.constant = 0;
+                    cell.lblReasonHeight.constant = 0;
+                    
+                    
+                    
+                    NSString *strTotalAmount = [Utility formatDecimal:dispute.refundAmount withMinFraction:2 andMaxFraction:2];
+                    strTotalAmount = [NSString stringWithFormat:@"%@ บาท",strTotalAmount];
+                    cell.lblAmount.attributedText = [self setAttributedString:@"จำนวนเงินที่ขอคืน: " text:strTotalAmount];
+                    
+                    
+                    cell.lblReasonDetail.attributedText = [self setAttributedString:@"รายละเอียดเหตุผล: " text:dispute.detail];
+                    [cell.lblReasonDetail sizeToFit];
+                    cell.lblReasonDetailTop.constant = 8;
+                    cell.lblReasonDetailHeight.constant = cell.lblReasonDetail.frame.size.height;
+                    
+                    
+                    cell.lblPhoneNoTop.constant = 0;
+                    cell.lblPhoneNoHeight.constant = 0;
+                    
+                    return cell;
                 }
             }
         }
@@ -1137,38 +1464,85 @@ static NSString * const reuseIdentifierDisputeDetail = @"CustomTableViewCellDisp
                         break;
                     case 1:
                     {
-                        CustomTableViewCellDisputeDetail *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifierDisputeDetail];
-                        cell.selectionStyle = UITableViewCellSelectionStyleNone;
-                        
-                        
-                        
-                        cell.lblRemark.text = @"ลูกค้าของคุณต้องการยกเลิกบิลนี้  ด้วยเหตุผลด้านล่างนี้ กรุณากดยืนยันเพื่อ Refund เงินคืนลูกค้า";
-                        [cell.lblRemark sizeToFit];
-                        cell.lblRemarkHeight.constant = cell.lblRemark.frame.size.height;
-                        
-                        
-                        
-                        Dispute *dispute = [Dispute getDisputeWithReceiptID:receipt.receiptID type:1];
-                        DisputeReason *disputeReason = [DisputeReason getDisputeReason:dispute.disputeReasonID];
-                        cell.lblReason.text = disputeReason.text;
-                        [cell.lblReason sizeToFit];
-                        cell.lblReasonHeight.constant = cell.lblReason.frame.size.height;
-                        
-                        
-                        
-                        float totalAmount = [Receipt getTotalAmount:receipt];
-                        cell.lblAmount.text = [Utility formatDecimal:totalAmount withMinFraction:2 andMaxFraction:2];
-                        
-                        
-                        cell.lblReasonDetailHeight.constant = 0;
-                        cell.lblReasonDetailTop.constant = 0;
-                        
-                        
-                        cell.lblPhoneNo.text = [Utility setPhoneNoFormat:dispute.phoneNo];
-                        [cell.lblPhoneNo sizeToFit];
-                        cell.lblPhoneNoHeight.constant = cell.lblPhoneNo.frame.size.height;
-                        
-                        return 11+cell.lblRemarkHeight.constant+8+cell.lblReasonHeight.constant+8+18+cell.lblReasonDetailTop.constant+cell.lblReasonDetailHeight.constant+8+cell.lblPhoneNoHeight.constant+11;
+                        if(receipt.status == 7)
+                        {
+                            CustomTableViewCellDisputeDetail *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifierDisputeDetail];
+                            cell.selectionStyle = UITableViewCellSelectionStyleNone;
+                            
+                            
+                            
+                            cell.lblRemark.text = @"ลูกค้าของคุณต้องการยกเลิกบิลนี้  ด้วยเหตุผลด้านล่างนี้ กรุณากด Confirm เพื่อ Refund เงินคืนลูกค้า";
+                            [cell.lblRemark sizeToFit];
+                            cell.lblRemarkHeight.constant = cell.lblRemark.frame.size.height;
+                            
+                            
+                            
+                            Dispute *dispute = [Dispute getDisputeWithReceiptID:receipt.receiptID type:1];
+                            DisputeReason *disputeReason = [DisputeReason getDisputeReason:dispute.disputeReasonID];
+                            cell.lblReason.text = disputeReason.text;
+                            [cell.lblReason sizeToFit];
+                            cell.lblReasonHeight.constant = cell.lblReason.frame.size.height;
+                            
+                            
+                            
+                            float totalAmount = [Receipt getTotalAmount:receipt];
+                            NSString *strTotalAmount = [Utility formatDecimal:totalAmount withMinFraction:2 andMaxFraction:2];
+                            strTotalAmount = [NSString stringWithFormat:@"%@ บาท",strTotalAmount];
+                            cell.lblAmount.attributedText = [self setAttributedString:@"จำนวนเงินที่ขอคืน: " text:strTotalAmount];
+                            
+                            
+                            
+                            cell.lblReasonDetailTop.constant = 0;
+                            cell.lblReasonDetailHeight.constant = 0;
+                            
+                            
+                            
+                            cell.lblPhoneNo.text = [Utility setPhoneNoFormat:dispute.phoneNo];
+                            [cell.lblPhoneNo sizeToFit];
+                            cell.lblPhoneNoHeight.constant = cell.lblPhoneNo.frame.size.height;
+                            
+                            return 11+cell.lblRemarkHeight.constant+8+cell.lblReasonHeight.constant+8+18+cell.lblReasonDetailTop.constant+cell.lblReasonDetailHeight.constant+8+cell.lblPhoneNoHeight.constant+11;
+                        }
+                        else if(receipt.status == 8)
+                        {
+                            CustomTableViewCellDisputeDetail *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifierDisputeDetail];
+                            cell.selectionStyle = UITableViewCellSelectionStyleNone;
+                            
+                            
+                            
+                            cell.lblRemark.textColor = mRed;
+                            cell.lblRemark.text = @"ลูกค้าของคุณ Open dispute ด้วยเหตุผลด้านล่างนี้ กรุณากด Confirm เพื่อ Refund เงินคืนลูกค้า หรือหากต้องการแก้ไขรายการกรุณากด Negotiate";
+                            [cell.lblRemark sizeToFit];
+                            cell.lblRemarkHeight.constant = cell.lblRemark.frame.size.height;
+                            
+                            
+                            
+                            Dispute *dispute = [Dispute getDisputeWithReceiptID:receipt.receiptID type:2];
+                            DisputeReason *disputeReason = [DisputeReason getDisputeReason:dispute.disputeReasonID];
+                            cell.lblReason.attributedText = [self setAttributedString:@"เหตุผล: " text:disputeReason.text];
+                            [cell.lblReason sizeToFit];
+                            cell.lblReasonHeight.constant = cell.lblReason.frame.size.height;
+                            
+                            
+                            
+                            NSString *strTotalAmount = [Utility formatDecimal:dispute.refundAmount withMinFraction:2 andMaxFraction:2];
+                            strTotalAmount = [NSString stringWithFormat:@"%@ บาท",strTotalAmount];
+                            cell.lblAmount.attributedText = [self setAttributedString:@"จำนวนเงินที่ขอคืน: " text:strTotalAmount];
+                            
+                            
+                            cell.lblReasonDetail.attributedText = [self setAttributedString:@"รายละเอียดเหตุผล: " text:dispute.detail];
+                            [cell.lblReasonDetail sizeToFit];
+                            cell.lblReasonDetailTop.constant = 8;
+                            cell.lblReasonDetailHeight.constant = cell.lblReasonDetail.frame.size.height;
+                            
+                            
+                            cell.lblPhoneNo.attributedText = [self setAttributedString:@"เบอร์โทรติดต่อ: " text:[Utility setPhoneNoFormat:dispute.phoneNo]];
+                            [cell.lblPhoneNo sizeToFit];
+                            cell.lblPhoneNoHeight.constant = cell.lblPhoneNo.frame.size.height;
+                            
+                            
+                            return 11+cell.lblRemarkHeight.constant+8+cell.lblReasonHeight.constant+8+18+cell.lblReasonDetailTop.constant+cell.lblReasonDetailHeight.constant+8+cell.lblPhoneNoHeight.constant+11;
+                        }
                     }
                         
                         break;
@@ -1183,6 +1557,267 @@ static NSString * const reuseIdentifierDisputeDetail = @"CustomTableViewCellDisp
                         break;
                     default:
                         break;
+                }
+            }
+            else if(receipt.status == 9 || receipt.status == 10 || receipt.status == 11 || receipt.status == 12 || receipt.status == 13 || receipt.status == 14)
+            {
+                if(item == 0)
+                {
+                    return 34;
+                }
+                else if(item == 1)
+                {
+                    switch (receipt.status)
+                    {
+                        case 9:
+                        {
+                            CustomTableViewCellDisputeDetail *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifierDisputeDetail];
+                            cell.selectionStyle = UITableViewCellSelectionStyleNone;
+                            
+                            
+                            
+                            cell.lblRemark.textColor = mRed;
+                            cell.lblRemark.text = @"คำร้องขอยกเลิกออเดอร์เสร็จสิ้น";
+                            [cell.lblRemark sizeToFit];
+                            cell.lblRemarkHeight.constant = cell.lblRemark.frame.size.height;
+                            
+                            
+                            
+                            Dispute *dispute = [Dispute getDisputeWithReceiptID:receipt.receiptID type:1];
+                            DisputeReason *disputeReason = [DisputeReason getDisputeReason:dispute.disputeReasonID];
+                            cell.lblReason.attributedText = [self setAttributedString:@"เหตุผล: " text:disputeReason.text];
+                            [cell.lblReason sizeToFit];
+                            cell.lblReasonHeight.constant = cell.lblReason.frame.size.height;
+                            
+                            
+                            
+                            float totalAmount = [Receipt getTotalAmount:receipt];
+                            NSString *strTotalAmount = [Utility formatDecimal:totalAmount withMinFraction:2 andMaxFraction:2];
+                            strTotalAmount = [NSString stringWithFormat:@"%@ บาท",strTotalAmount];
+                            cell.lblAmount.attributedText = [self setAttributedString:@"จำนวนเงินที่ขอคืน: " text:strTotalAmount];
+                            
+                            
+                            cell.lblReasonDetailHeight.constant = 0;
+                            cell.lblReasonDetailTop.constant = 0;
+                            
+                            
+                            cell.lblPhoneNo.attributedText = [self setAttributedString:@"เบอร์โทรติดต่อ: " text:[Utility setPhoneNoFormat:dispute.phoneNo]];
+                            [cell.lblPhoneNo sizeToFit];
+                            cell.lblPhoneNoHeight.constant = cell.lblPhoneNo.frame.size.height;
+                            
+                            
+                            return 11+cell.lblRemarkHeight.constant+cell.lblReasonTop.constant+cell.lblReasonHeight.constant+8+18+cell.lblReasonDetailTop.constant+cell.lblReasonDetailHeight.constant+cell.lblPhoneNoTop.constant+cell.lblPhoneNoHeight.constant+11;
+                        }
+                        break;
+                        case 10:
+                        {
+                            CustomTableViewCellDisputeDetail *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifierDisputeDetail];
+                            cell.selectionStyle = UITableViewCellSelectionStyleNone;
+                            
+                            
+                            
+                            cell.lblRemark.textColor = mRed;
+                            cell.lblRemark.text = @"กระบวนการ Open dispute เสร็จสิ้น";
+                            [cell.lblRemark sizeToFit];
+                            cell.lblRemarkHeight.constant = cell.lblRemark.frame.size.height;
+                            
+                            
+                            
+                            Dispute *dispute = [Dispute getDisputeWithReceiptID:receipt.receiptID type:2];
+                            DisputeReason *disputeReason = [DisputeReason getDisputeReason:dispute.disputeReasonID];
+                            cell.lblReason.attributedText = [self setAttributedString:@"เหตุผล: " text:disputeReason.text];
+                            [cell.lblReason sizeToFit];
+                            cell.lblReasonHeight.constant = cell.lblReason.frame.size.height;
+                            
+                            
+                            
+                            NSString *strTotalAmount = [Utility formatDecimal:dispute.refundAmount withMinFraction:2 andMaxFraction:2];
+                            strTotalAmount = [NSString stringWithFormat:@"%@ บาท",strTotalAmount];
+                            cell.lblAmount.attributedText = [self setAttributedString:@"จำนวนเงินที่ขอคืน: " text:strTotalAmount];
+                            
+                            
+                            cell.lblReasonDetail.attributedText = [self setAttributedString:@"รายละเอียดเหตุผล: " text:dispute.detail];
+                            [cell.lblReasonDetail sizeToFit];
+                            cell.lblReasonDetailTop.constant = 8;
+                            cell.lblReasonDetailHeight.constant = cell.lblReasonDetail.frame.size.height;
+                            
+                            
+                            cell.lblPhoneNo.attributedText = [self setAttributedString:@"เบอร์โทรติดต่อ: " text:[Utility setPhoneNoFormat:dispute.phoneNo]];
+                            [cell.lblPhoneNo sizeToFit];
+                            cell.lblPhoneNoHeight.constant = cell.lblPhoneNo.frame.size.height;
+                            
+                            
+                            return 11+cell.lblRemarkHeight.constant+cell.lblReasonTop.constant+cell.lblReasonHeight.constant+8+18+cell.lblReasonDetailTop.constant+cell.lblReasonDetailHeight.constant+cell.lblPhoneNoTop.constant+cell.lblPhoneNoHeight.constant+11;
+                        }
+                        break;
+                        case 11:
+                        {
+                            CustomTableViewCellDisputeDetail *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifierDisputeDetail];
+                            cell.selectionStyle = UITableViewCellSelectionStyleNone;
+                            
+                            
+                            
+                            cell.lblRemark.textColor = mRed;
+                            cell.lblRemark.text = @"Open dispute ที่ส่งไปกำลังดำเนินการอยู่ จะมีเจ้าหน้าที่ติดต่อกลับไปภายใน 24 ชม.";
+                            [cell.lblRemark sizeToFit];
+                            cell.lblRemarkHeight.constant = cell.lblRemark.frame.size.height;
+                            
+                            
+                            
+                            Dispute *dispute = [Dispute getDisputeWithReceiptID:receipt.receiptID type:2];
+                            DisputeReason *disputeReason = [DisputeReason getDisputeReason:dispute.disputeReasonID];
+                            cell.lblReason.attributedText = [self setAttributedString:@"เหตุผล: " text:disputeReason.text];
+                            [cell.lblReason sizeToFit];
+                            cell.lblReasonHeight.constant = cell.lblReason.frame.size.height;
+                            
+                            
+                            
+                            NSString *strTotalAmount = [Utility formatDecimal:dispute.refundAmount withMinFraction:2 andMaxFraction:2];
+                            strTotalAmount = [NSString stringWithFormat:@"%@ บาท",strTotalAmount];
+                            cell.lblAmount.attributedText = [self setAttributedString:@"จำนวนเงินที่ขอคืน: " text:strTotalAmount];
+                            
+                            
+                            cell.lblReasonDetail.attributedText = [self setAttributedString:@"รายละเอียดเหตุผล: " text:dispute.detail];
+                            [cell.lblReasonDetail sizeToFit];
+                            cell.lblReasonDetailTop.constant = 8;
+                            cell.lblReasonDetailHeight.constant = cell.lblReasonDetail.frame.size.height;
+                            
+                            
+                            cell.lblPhoneNo.attributedText = [self setAttributedString:@"เบอร์โทรติดต่อ: " text:[Utility setPhoneNoFormat:dispute.phoneNo]];
+                            [cell.lblPhoneNo sizeToFit];
+                            cell.lblPhoneNoHeight.constant = cell.lblPhoneNo.frame.size.height;
+                            
+                            
+                            return 11+cell.lblRemarkHeight.constant+cell.lblReasonTop.constant+cell.lblReasonHeight.constant+8+18+cell.lblReasonDetailTop.constant+cell.lblReasonDetailHeight.constant+cell.lblPhoneNoTop.constant+cell.lblPhoneNoHeight.constant+11;
+                        }
+                        break;
+                        case 12:
+                        {
+                            CustomTableViewCellDisputeDetail *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifierDisputeDetail];
+                            cell.selectionStyle = UITableViewCellSelectionStyleNone;
+                            
+                            
+                            
+                            cell.lblRemark.textColor = mRed;
+                            cell.lblRemark.text = @"Open dispute ได้มีการแก้ไขตามด้านล่าง โปรดรอการยืนยันจากลูกค้าสักครู่";
+                            [cell.lblRemark sizeToFit];
+                            cell.lblRemarkHeight.constant = cell.lblRemark.frame.size.height;
+                            
+                            
+                            
+                            Dispute *dispute = [Dispute getDisputeWithReceiptID:receipt.receiptID type:5];
+                            DisputeReason *disputeReason = [DisputeReason getDisputeReason:dispute.disputeReasonID];
+                            cell.lblReason.attributedText = [self setAttributedString:@"เหตุผล: " text:disputeReason.text];
+                            [cell.lblReason sizeToFit];
+                            cell.lblReasonHeight.constant = cell.lblReason.frame.size.height;
+                            
+                            
+                            
+                            NSString *strTotalAmount = [Utility formatDecimal:dispute.refundAmount withMinFraction:2 andMaxFraction:2];
+                            strTotalAmount = [NSString stringWithFormat:@"%@ บาท",strTotalAmount];
+                            cell.lblAmount.attributedText = [self setAttributedString:@"จำนวนเงินที่ขอคืน: " text:strTotalAmount];
+                            
+                            
+                            cell.lblReasonDetail.attributedText = [self setAttributedString:@"รายละเอียดเหตุผล: " text:dispute.detail];
+                            [cell.lblReasonDetail sizeToFit];
+                            cell.lblReasonDetailTop.constant = 8;
+                            cell.lblReasonDetailHeight.constant = cell.lblReasonDetail.frame.size.height;
+                            
+                            
+                            cell.lblPhoneNo.attributedText = [self setAttributedString:@"เบอร์โทรติดต่อ: " text:[Utility setPhoneNoFormat:dispute.phoneNo]];
+                            [cell.lblPhoneNo sizeToFit];
+                            cell.lblPhoneNoHeight.constant = cell.lblPhoneNo.frame.size.height;
+                            
+                            
+                            return 11+cell.lblRemarkHeight.constant+cell.lblReasonTop.constant+cell.lblReasonHeight.constant+8+18+cell.lblReasonDetailTop.constant+cell.lblReasonDetailHeight.constant+cell.lblPhoneNoTop.constant+cell.lblPhoneNoHeight.constant+11;
+                        }
+                        break;
+                        case 13:
+                        {
+                            CustomTableViewCellDisputeDetail *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifierDisputeDetail];
+                            cell.selectionStyle = UITableViewCellSelectionStyleNone;
+                            
+                            
+                            
+                            cell.lblRemark.textColor = mRed;
+                            cell.lblRemark.text = @"หลังจากคุยกับเจ้าหน้าที่ Jummum แล้ว มีการแก้ไขจำนวนเงิน refund ใหม่ ตามด้านล่างนี้ กรุณากด Confirm เพื่อ Refund เงินคืนลูกค้า หรือหากต้องการแก้ไขรายการกรุณากด Negotiate";
+                            [cell.lblRemark sizeToFit];
+                            cell.lblRemarkHeight.constant = cell.lblRemark.frame.size.height;
+                            
+                            
+                            
+                            Dispute *dispute = [Dispute getDisputeWithReceiptID:receipt.receiptID type:3];
+                            cell.lblReasonTop.constant = 0;
+                            cell.lblReasonHeight.constant = 0;
+                            
+                            
+                            
+                            NSString *strTotalAmount = [Utility formatDecimal:dispute.refundAmount withMinFraction:2 andMaxFraction:2];
+                            strTotalAmount = [NSString stringWithFormat:@"%@ บาท",strTotalAmount];
+                            cell.lblAmount.attributedText = [self setAttributedString:@"จำนวนเงินที่ขอคืน: " text:strTotalAmount];
+                            
+                            
+                            cell.lblReasonDetail.attributedText = [self setAttributedString:@"รายละเอียดเหตุผล: " text:dispute.detail];
+                            [cell.lblReasonDetail sizeToFit];
+                            cell.lblReasonDetailTop.constant = 8;
+                            cell.lblReasonDetailHeight.constant = cell.lblReasonDetail.frame.size.height;
+                            
+                            
+                            cell.lblPhoneNoTop.constant = 0;
+                            cell.lblPhoneNoHeight.constant = 0;
+                            
+                            
+                            return 11+cell.lblRemarkHeight.constant+cell.lblReasonTop.constant+cell.lblReasonHeight.constant+8+18+cell.lblReasonDetailTop.constant+cell.lblReasonDetailHeight.constant+cell.lblPhoneNoTop.constant+cell.lblPhoneNoHeight.constant+11;
+                        }
+                        break;
+                        case 14:
+                        {
+                            CustomTableViewCellDisputeDetail *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifierDisputeDetail];
+                            cell.selectionStyle = UITableViewCellSelectionStyleNone;
+                            
+                            
+                            
+                            cell.lblRemark.textColor = mRed;
+                            cell.lblRemark.text = @"กระบวนการ Open dispute ดำเนินการเสร็จสิ้นแล้ว";
+                            [cell.lblRemark sizeToFit];
+                            cell.lblRemarkHeight.constant = cell.lblRemark.frame.size.height;
+                            
+                            
+                            
+                            Dispute *dispute = [Dispute getDisputeWithReceiptID:receipt.receiptID type:5];
+                            DisputeReason *disputeReason = [DisputeReason getDisputeReason:dispute.disputeReasonID];
+                            cell.lblReason.attributedText = [self setAttributedString:@"เหตุผล: " text:disputeReason.text];
+                            [cell.lblReason sizeToFit];
+                            cell.lblReasonHeight.constant = cell.lblReason.frame.size.height;
+                            
+                            
+                            
+                            NSString *strTotalAmount = [Utility formatDecimal:dispute.refundAmount withMinFraction:2 andMaxFraction:2];
+                            strTotalAmount = [NSString stringWithFormat:@"%@ บาท",strTotalAmount];
+                            cell.lblAmount.attributedText = [self setAttributedString:@"จำนวนเงินที่ขอคืน: " text:strTotalAmount];
+                            
+                            
+                            cell.lblReasonDetail.attributedText = [self setAttributedString:@"รายละเอียดเหตุผล: " text:dispute.detail];
+                            [cell.lblReasonDetail sizeToFit];
+                            cell.lblReasonDetailTop.constant = 8;
+                            cell.lblReasonDetailHeight.constant = cell.lblReasonDetail.frame.size.height;
+                            
+                            
+                            cell.lblPhoneNo.attributedText = [self setAttributedString:@"เบอร์โทรติดต่อ: " text:[Utility setPhoneNoFormat:dispute.phoneNo]];
+                            [cell.lblPhoneNo sizeToFit];
+                            cell.lblPhoneNoHeight.constant = cell.lblPhoneNo.frame.size.height;
+                            
+                            
+                            return 11+cell.lblRemarkHeight.constant+cell.lblReasonTop.constant+cell.lblReasonHeight.constant+8+18+cell.lblReasonDetailTop.constant+cell.lblReasonDetailHeight.constant+cell.lblPhoneNoTop.constant+cell.lblPhoneNoHeight.constant+11;
+                        }
+                        break;
+                        default:
+                        break;
+                    }
+                }
+                else
+                {
+                    return 44+8;
                 }
             }
         }
@@ -1343,31 +1978,31 @@ static NSString * const reuseIdentifierDisputeDetail = @"CustomTableViewCellDisp
 
 -(void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
 {
-//    if([[segue identifier] isEqualToString:@"segCreditCardAndOrderSummary"])
-//    {
-//        CreditCardAndOrderSummaryViewController *vc = segue.destinationViewController;
-//        vc.branch = _receiptBranch;
-//        vc.customerTable = nil;
-//        vc.fromReceiptSummaryMenu = 1;
-//    }
-//    else if([[segue identifier] isEqualToString:@"segConfirmDispute"])
-//    {
-//        ConfirmDisputeViewController *vc = segue.destinationViewController;
-//        vc.fromType = _fromType;
-//        vc.receipt = receipt;
-//    }
+    if([[segue identifier] isEqualToString:@"segConfirmDispute"])
+    {
+        ConfirmDisputeViewController *vc = segue.destinationViewController;
+        vc.fromType = _fromType;
+        vc.receipt = receipt;
+    }
 }
 
--(void)disputeOrder:(id)sender
-{
-    _fromType = 2;
-    [self performSegueWithIdentifier:@"segConfirmDispute" sender:self];
-}
+//-(void)disputeOrder:(id)sender
+//{
+//    _fromType = 2;
+//    [self performSegueWithIdentifier:@"segConfirmDispute" sender:self];
+//}
+//
+//-(void)cancelOrder:(id)sender
+//{
+//    //    dont forget to uncomment
+//    _fromType = 1;
+//    [self performSegueWithIdentifier:@"segConfirmDispute" sender:self];
+//}
 
--(void)cancelOrder:(id)sender
+-(void)moneyRefund:(id)sender
 {
-    //    dont forget to uncomment
-    _fromType = 1;
+    
+    _fromType = receipt.status == 2?3:4;
     [self performSegueWithIdentifier:@"segConfirmDispute" sender:self];
 }
 
@@ -1385,7 +2020,6 @@ static NSString * const reuseIdentifierDisputeDetail = @"CustomTableViewCellDisp
     
     [self loadingOverlayView];
     [self.homeModel updateItems:dbJummumReceipt withData:receipt actionScreen:@"update JMM receipt"];
-    
 }
 
 -(void)cancelCancel:(id)sender
@@ -1402,6 +2036,16 @@ static NSString * const reuseIdentifierDisputeDetail = @"CustomTableViewCellDisp
     [self loadingOverlayView];
     [self.homeModel updateItems:dbJummumReceipt withData:receipt actionScreen:@"update JMM receipt"];
     
+}
+
+-(void)confirmNegotiate:(id)sender
+{
+    receipt.status = 14;
+    receipt.modifiedUser = [Utility modifiedUser];
+    receipt.modifiedDate = [Utility currentDateTime];
+    
+    [self loadingOverlayView];
+    [self.homeModel updateItems:dbJummumReceipt withData:receipt actionScreen:@"update JMM receipt"];
 }
 
 -(void)negotiate:(id)sender
@@ -1423,13 +2067,42 @@ static NSString * const reuseIdentifierDisputeDetail = @"CustomTableViewCellDisp
 {
     [self removeOverlayViews];
     [tbvData reloadData];
-    if(receipt.status == 11)
+    if(receipt.status == 6)
+    {
+        
+    }
+    else if(receipt.status == 11)
     {
         [self showAlert:@"สำเร็จ" message:@"คุณส่งคำร้องขอแก้ไขจำนวนเงินที่จะ refund สำเร็จ จะมีเจ้าหน้าที่ติดต่อกลับไปภายใน 24 ชม."];
     }
-    else
+    else if(receipt.status == 9 || receipt.status == 10)
     {
-        [self showAlert:@"สำเร็จ" message:@"ลูกค้าของคุณจะได้รับเงินคืนภายใน 3 วันทำการ"];
+        [self showAlert:@"สำเร็จ" message:@"ลูกค้าของคุณจะได้รับเงินคืนภายใน 48 ชม."];
     }
+}
+
+-(void)printIndividualReceipt:(id)sender
+{
+//    UIButton *btnPrint = sender;
+//    Receipt *receipt = _receiptList[btnPrint.tag];
+    NSMutableArray *receiptList = [[NSMutableArray alloc]init];
+    [receiptList addObject:receipt];
+    [self printReceiptKitchenBill:receiptList];
+//    [self printReceipt:receiptList];
+    
+}
+
+-(void)changeToDeliveredStatus:(id)sender
+{
+    receipt.status = 6;
+    receipt.modifiedUser = [Utility modifiedUser];
+    receipt.modifiedDate = [Utility currentDateTime];
+    
+    
+    [_homeModelDelivered updateItems:dbJummumReceipt withData:receipt actionScreen:@"update JMM receipt"];
+}
+-(void)reloadTableView
+{
+    [tbvData reloadData];
 }
 @end

@@ -9,5 +9,9 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedSpecialPriceProgram : NSObject
+@property (retain, nonatomic) NSMutableArray *specialPriceProgramList;
+
++ (SharedSpecialPriceProgram *)sharedSpecialPriceProgram;
+
 
 @end

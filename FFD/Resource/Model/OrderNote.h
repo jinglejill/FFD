@@ -17,9 +17,15 @@
 @property (nonatomic) NSInteger replaceSelf;
 @property (nonatomic) NSInteger idInserted;
 
+
+@property (nonatomic) NSInteger branchID;
+
+
+
 -(OrderNote *)initWithOrderTakingID:(NSInteger)orderTakingID noteID:(NSInteger)noteID;
 +(NSInteger)getNextID;
 +(void)addObject:(OrderNote *)orderNote;
++(void)addList:(NSMutableArray *)orderNoteList;
 +(void)removeObject:(OrderNote *)orderNote;
 +(void)removeList:(NSMutableArray *)orderNoteList;
 +(OrderNote *)getOrderNote:(NSInteger)orderNoteID;
@@ -27,7 +33,12 @@
 +(NSMutableArray *)getNoteListWithOrderTakingID:(NSInteger)orderTakingID;
 +(NSMutableArray *)getOrderNoteListWithOrderTakingID:(NSInteger)orderTakingID;
 +(NSMutableArray *)getOrderNoteListWithCustomerTableID:(NSInteger)customerTableID;
-+(NSString *)getNoteNameListInTextWithOrderTakingID:(NSInteger)orderTakingID;
++(NSString *)getNoteNameListInTextWithOrderTakingID:(NSInteger)orderTakingID noteType:(NSInteger)noteType;
 +(NSString *)getNoteIDListInTextWithOrderTakingID:(NSInteger)orderTakingID;
 +(float)getSumNotePriceWithOrderTakingID:(NSInteger)orderTakingID;
++(OrderNote *)getOrderNoteWithNoteID:(NSInteger)noteID orderNoteList:(NSMutableArray *)orderNoteList;
++(NSMutableArray *)getNoteListWithOrderTakingID:(NSInteger)orderTakingID noteType:(NSInteger)noteType;
++(NSMutableArray *)getOrderNoteListWithOrderTakingList:(NSMutableArray *)orderTakingList;
++(NSString *)getNoteNameListInTextWithOrderTakingID:(NSInteger)orderTakingID noteType:(NSInteger)noteType branchID:(NSInteger)branchID;
++(NSMutableArray *)getNoteListWithOrderTakingID:(NSInteger)orderTakingID noteType:(NSInteger)noteType branchID:(NSInteger)branchID;
 @end

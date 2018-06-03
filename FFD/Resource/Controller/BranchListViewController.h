@@ -8,6 +8,11 @@
 
 #import "CustomViewController.h"
 
-@interface BranchListViewController : CustomViewController
+@interface BranchListViewController : CustomViewController<UICollectionViewDataSource,UICollectionViewDelegate,UICollectionViewDelegateFlowLayout,UISearchBarDelegate>
+@property (strong, nonatomic) IBOutlet UICollectionView *colVwBranch;
+@property (strong, nonatomic) IBOutlet UISearchBar *sbText;
+- (IBAction)addBranch:(id)sender;
+- (IBAction)backToSetting:(id)sender;
+- (IBAction)unwindToBranchList:(UIStoryboardSegue *)segue;
 
 @end

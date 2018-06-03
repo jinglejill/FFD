@@ -34,4 +34,8 @@
 }
 */
 
+- (IBAction)goToSetting:(id)sender
+{
+    [self performSegueWithIdentifier:@"segUnwindToSetting" sender:self];
+}
 @end

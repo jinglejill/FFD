@@ -13,4 +13,7 @@
 @property (strong, nonatomic) IBOutlet UILabel *lblNote;
 @property (strong, nonatomic) IBOutlet UILabel *lblTotalPrice;
 @property (strong, nonatomic) IBOutlet UILabel *lblQuantity;
+@property (strong, nonatomic) IBOutlet UILabel *lblOriginalPrice;
+@property (strong, nonatomic) IBOutlet UILabel *lblReason;
+@property (strong, nonatomic) IBOutlet UILongPressGestureRecognizer *longPressGestureRecognizer;
 @end

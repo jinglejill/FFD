@@ -7,7 +7,13 @@
 //
 
 #import "CustomViewController.h"
+#import "ConfirmAndCancelView.h"
 
-@interface MoneyCheckCloseViewController : CustomViewController
+
+@interface MoneyCheckCloseViewController : CustomViewController<UITableViewDelegate,UITableViewDataSource>
+@property (strong, nonatomic) IBOutlet UITableView *tbvMoneyCheckClose;
+@property (strong, nonatomic) ConfirmAndCancelView *vwConfirmAndCancel;
+@property (nonatomic) NSInteger period;
+@property (nonatomic) NSInteger type;
 
 @end

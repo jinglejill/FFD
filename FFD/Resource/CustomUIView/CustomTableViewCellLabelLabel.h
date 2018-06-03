@@ -1,5 +1,5 @@
 //
-//  CustomTableViewCell.h
+//  CustomTableViewCellLabelLabel.h
 //  FFD
 //
 //  Created by Thidaporn Kijkamjai on 10/11/2560 BE.
@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 
-@interface CustomTableViewCell : UITableViewCell
+@interface CustomTableViewCellLabelLabel : UITableViewCell
 @property (strong, nonatomic) IBOutlet UILabel *lblTextLabel;
 @property (strong, nonatomic) IBOutlet UILabel *lblDetailTextLabel;
 @property (strong, nonatomic) UILongPressGestureRecognizer *longPressGestureRecognizer;

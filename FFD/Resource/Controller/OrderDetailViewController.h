@@ -7,7 +7,19 @@
 //
 
 #import "CustomViewController.h"
+#import "Receipt.h"
+#import "CredentialsDb.h"
 
-@interface OrderDetailViewController : CustomViewController
+
+
+@interface OrderDetailViewController : CustomViewController<UITableViewDelegate,UITableViewDataSource>
+@property (strong, nonatomic) IBOutlet UITableView *tbvData;
+@property (strong, nonatomic) Receipt *receipt;
+@property (strong, nonatomic) CredentialsDb *credentialsDb;
+
+
+
+-(IBAction)unwindToOrderDetail:(UIStoryboardSegue *)segue;
+- (IBAction)goBack:(id)sender;
 
 @end

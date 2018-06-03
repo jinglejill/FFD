@@ -9,5 +9,7 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedZipCode : NSObject
+@property (retain, nonatomic) NSMutableArray *zipCodeList;
 
++ (SharedZipCode *)sharedZipCode;
 @end

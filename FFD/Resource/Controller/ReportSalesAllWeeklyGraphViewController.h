@@ -9,5 +9,6 @@
 #import "CustomReportViewController.h"
 
 @interface ReportSalesAllWeeklyGraphViewController : CustomReportViewController
-
+@property (strong, nonatomic) IBOutlet UIButton *btnTableView;
+- (IBAction)showTableView:(id)sender;
 @end

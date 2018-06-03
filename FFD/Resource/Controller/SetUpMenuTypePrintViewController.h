@@ -8,6 +8,8 @@
 
 #import "CustomViewController.h"
 
-@interface SetUpMenuTypePrintViewController : CustomViewController
-
+@interface SetUpMenuTypePrintViewController : CustomViewController<UICollectionViewDelegate,UICollectionViewDataSource,UICollectionViewDelegateFlowLayout,UIPopoverPresentationControllerDelegate>
+@property (strong, nonatomic) IBOutlet UICollectionView *colVwSetUpMenuTypePrint;
+- (IBAction)backToSetting:(id)sender;
+-(void)reloadCollectionView;
 @end

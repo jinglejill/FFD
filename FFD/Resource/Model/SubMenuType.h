@@ -9,5 +9,23 @@
 #import <Foundation/Foundation.h>
 
 @interface SubMenuType : NSObject
+@property (nonatomic) NSInteger subMenuTypeID;
+@property (nonatomic) NSInteger menuTypeID;
+@property (retain, nonatomic) NSString * name;
+@property (nonatomic) NSInteger orderNo;
+@property (nonatomic) NSInteger status;
+@property (retain, nonatomic) NSString * modifiedUser;
+@property (retain, nonatomic) NSDate * modifiedDate;
+@property (nonatomic) NSInteger replaceSelf;
+@property (nonatomic) NSInteger idInserted;
 
+-(SubMenuType *)initWithMenuTypeID:(NSInteger)menuTypeID name:(NSString *)name orderNo:(NSInteger)orderNo status:(NSInteger)status;
++(NSInteger)getNextID;
++(void)addObject:(SubMenuType *)subMenuType;
++(void)removeObject:(SubMenuType *)subMenuType;
++(SubMenuType *)getSubMenuType:(NSInteger)subMenuTypeID;
++(NSMutableArray *)getSubMenuTypeListWithMenuTypeID:(NSInteger)menuTypeID;
++(NSMutableArray *)getSubMenuTypeListWithMenuTypeID:(NSInteger)menuTypeID status:(NSInteger)status;
++(NSInteger)getNextOrderNoWithStatus:(NSInteger)status;
+-(BOOL)editSubMenuType:(SubMenuType *)editingSubMenuType;
 @end

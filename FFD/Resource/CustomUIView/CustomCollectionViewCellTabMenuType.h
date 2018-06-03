@@ -11,6 +11,7 @@
 @interface CustomCollectionViewCellTabMenuType : UICollectionViewCell
 @property (strong, nonatomic) IBOutlet UILabel *lblMenuType;
 @property (strong, nonatomic) IBOutlet UIView *vwBottomBorder;
+@property (strong, nonatomic) IBOutlet UILongPressGestureRecognizer *longPressGestureRecognizer;
 - (IBAction)selectMenuType:(id)sender;
 
 @end

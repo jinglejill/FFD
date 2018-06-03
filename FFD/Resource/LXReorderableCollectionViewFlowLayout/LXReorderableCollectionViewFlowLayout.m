@@ -295,7 +295,8 @@ static NSString * const kLXCollectionViewKeyPath = @"collectionView";
 }
 
 
-- (void)handleLongPressGesture:(UILongPressGestureRecognizer *)gestureRecognizer {
+- (void)handleLongPressGesture:(UILongPressGestureRecognizer *)gestureRecognizer
+{
     switch(gestureRecognizer.state) {
         case UIGestureRecognizerStateBegan: {
             NSIndexPath *currentIndexPath = [self.collectionView indexPathForItemAtPoint:[gestureRecognizer locationInView:self.collectionView]];

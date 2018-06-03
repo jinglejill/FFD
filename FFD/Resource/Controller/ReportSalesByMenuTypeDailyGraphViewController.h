@@ -6,8 +6,11 @@
 //  Copyright © 2560 Appxelent. All rights reserved.
 //
 
-#import "CustomViewController.h"
+#import "CustomReportViewController.h"
 
-@interface ReportSalesByMenuTypeDailyGraphViewController : CustomViewController
+
+@interface ReportSalesByMenuTypeDailyGraphViewController : CustomReportViewController
+@property (strong, nonatomic) IBOutlet UIButton *btnTableView;
+- (IBAction)showTableView:(id)sender;
 
 @end

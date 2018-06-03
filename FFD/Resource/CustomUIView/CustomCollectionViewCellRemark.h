@@ -9,5 +9,6 @@
 #import <UIKit/UIKit.h>
 
 @interface CustomCollectionViewCellRemark : UICollectionViewCell
-
+@property (strong, nonatomic) IBOutlet UILabel *lblDateTime;
+@property (strong, nonatomic) IBOutlet UILabel *lblRemark;
 @end

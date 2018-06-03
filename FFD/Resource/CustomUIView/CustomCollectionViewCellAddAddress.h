@@ -9,5 +9,7 @@
 #import <UIKit/UIKit.h>
 
 @interface CustomCollectionViewCellAddAddress : UICollectionViewCell
+@property (strong, nonatomic) IBOutlet UIButton *btnAddAddress;
+
 
 @end

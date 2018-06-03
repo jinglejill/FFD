@@ -1,12 +1,12 @@
 //
-//  MaterialInventoryViewController.m
+//  InventoryViewController.m
 //  FFD
 //
 //  Created by Thidaporn Kijkamjai on 10/22/2560 BE.
 //  Copyright © 2560 Appxelent. All rights reserved.
 //
 
-#import "MaterialInventoryViewController.h"
+#import "InventoryViewController.h"
 #import "CustomCollectionViewCellTabMenuType.h"
 #import "CustomCollectionViewCell.h"
 #import "IngredientType.h"
@@ -15,7 +15,7 @@
 
 
 
-@interface MaterialInventoryViewController ()
+@interface InventoryViewController ()
 {
     NSMutableArray *_ingredientTypeList;
     NSInteger _selectedIndexIngredientType;    
@@ -28,7 +28,8 @@
 }
 @end
 
-@implementation MaterialInventoryViewController
+@implementation InventoryViewController
+static NSString * const reuseHeaderViewIdentifier = @"Header";
 static NSString * const reuseIdentifierTabMenuType = @"CustomCollectionViewCellTabMenuType";
 static NSString * const reuseIdentifierCell = @"CustomCollectionViewCell";
 
@@ -41,10 +42,15 @@ static NSString * const reuseIdentifierCell = @"CustomCollectionViewCell";
 @synthesize dtPicker;
 @synthesize txtSalesConStartDate;
 @synthesize txtSalesConEndDate;
+@synthesize btnIngredientCheck;
+@synthesize btnCustomSalesByMenu;
+@synthesize btnIngredientReceive;
+
 
 
 - (IBAction)unwindToMaterialInventory:(UIStoryboardSegue *)segue
 {
+    [self loadViewProcess];
 }
 
 -(void)viewDidLayoutSubviews
@@ -92,7 +98,11 @@ static NSString * const reuseIdentifierCell = @"CustomCollectionViewCell";
         UINib *nib = [UINib nibWithNibName:reuseIdentifierCell bundle:nil];
         [colVwIngredient registerNib:nib forCellWithReuseIdentifier:reuseIdentifierCell];
     }
+    [colVwIngredient registerClass:[UICollectionReusableView class] forSupplementaryViewOfKind:UICollectionElementKindSectionHeader withReuseIdentifier:reuseHeaderViewIdentifier];
     
+    
+    UICollectionViewFlowLayout *layout = (UICollectionViewFlowLayout *)colVwIngredient.collectionViewLayout;
+    layout.sectionHeadersPinToVisibleBounds = YES;
     
     
     UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self.view action:@selector(endEditing:)];
@@ -111,15 +121,33 @@ static NSString * const reuseIdentifierCell = @"CustomCollectionViewCell";
     if([textField isEqual:txtDate] && ![Utility isStringEmpty:txtExpectedSales.text])
     {
         //download material inventory
-        [self downloadMaterialInventory];
+        [self downloadInventory];
     }
-    if([textField isEqual:txtExpectedSales] && ![Utility isStringEmpty:txtExpectedSales.text])
+    else if([textField isEqual:txtExpectedSales] && ![Utility isStringEmpty:txtExpectedSales.text])
     {
         [Utility setExpectedSales:[Utility floatValue:txtExpectedSales.text]];
         
         
         //download material inventory
-        [self downloadMaterialInventory];
+        [self downloadInventory];
+    }
+    else if([textField isEqual:txtSalesConStartDate])
+    {
+        NSString *strStartDate = [Utility formatDate:txtSalesConStartDate.text fromFormat:@"d MMM yyyy" toFormat:@"yyyyMMdd"];
+        NSString *strEndDate = [Utility formatDate:txtSalesConEndDate.text fromFormat:@"d MMM yyyy" toFormat:@"yyyyMMdd"];
+        if(strStartDate>strEndDate)
+        {
+            txtSalesConEndDate.text = txtSalesConStartDate.text;
+        }
+    }
+    else if([textField isEqual:txtSalesConEndDate])
+    {
+        NSString *strStartDate = [Utility formatDate:txtSalesConStartDate.text fromFormat:@"d MMM yyyy" toFormat:@"yyyyMMdd"];
+        NSString *strEndDate = [Utility formatDate:txtSalesConEndDate.text fromFormat:@"d MMM yyyy" toFormat:@"yyyyMMdd"];
+        if(strStartDate>strEndDate)
+        {
+            txtSalesConStartDate.text = txtSalesConEndDate.text;
+        }
     }
 }
 
@@ -132,28 +160,28 @@ static NSString * const reuseIdentifierCell = @"CustomCollectionViewCell";
     }
     
 }
-
-- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string
-{
-    
-    if([textField isEqual:txtExpectedSales])
-    {
-        NSString *resultingString = [textField.text stringByReplacingCharactersInRange: range withString: string];
-        
-        // The user deleting all input is perfectly acceptable.
-        if ([resultingString length] == 0) {
-            return true;
-        }
-        
-        float holder;
-        
-        NSScanner *scan = [NSScanner scannerWithString: resultingString];
-        
-        return [scan scanFloat: &holder] && [scan isAtEnd];
-    }
-    
-    return YES;
-}
+//
+//- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string
+//{
+//    
+//    if([textField isEqual:txtExpectedSales])
+//    {
+//        NSString *resultingString = [textField.text stringByReplacingCharactersInRange: range withString: string];
+//        
+//        // The user deleting all input is perfectly acceptable.
+//        if ([resultingString length] == 0) {
+//            return true;
+//        }
+//        
+//        float holder;
+//        
+//        NSScanner *scan = [NSScanner scannerWithString: resultingString];
+//        
+//        return [scan scanFloat: &holder] && [scan isAtEnd];
+//    }
+//    
+//    return YES;
+//}
 
 - (IBAction)datePickerChanged:(id)sender
 {
@@ -176,7 +204,11 @@ static NSString * const reuseIdentifierCell = @"CustomCollectionViewCell";
     [super loadView];
     
     
+    [self setButtonDesign:btnIngredientReceive];
+    [self setButtonDesign:btnCustomSalesByMenu];
+    [self setButtonDesign:btnIngredientCheck];
     _selectedIndexIngredientType = 0;
+    btnCustomSalesByMenu.hidden = YES;
     
     
     
@@ -189,6 +221,7 @@ static NSString * const reuseIdentifierCell = @"CustomCollectionViewCell";
     txtDate.inputView = dtPicker;
     txtSalesConStartDate.inputView = dtPicker;
     txtSalesConEndDate.inputView = dtPicker;
+    [dtPicker setTimeZone:[NSTimeZone timeZoneWithName:@"GMT"]];
     [dtPicker removeFromSuperview];
     
     
@@ -207,24 +240,25 @@ static NSString * const reuseIdentifierCell = @"CustomCollectionViewCell";
     
     _ingredientTypeList = [IngredientType getIngredientTypeListWithStatus:1];
     [colVwIngredientType reloadData];
-    if([_ingredientTypeList count]>0)
-    {
-        [self selectIngredientType];
-    }
+    [self selectIngredientType];
 
     
     if(![Utility isStringEmpty:txtExpectedSales.text])
     {
         //download material inventory
-        [self downloadMaterialInventory];
+        [self downloadInventory];
     }
 }
 
 
 - (void)selectIngredientType
 {
-    NSIndexPath *indexPath = [NSIndexPath indexPathForItem:_selectedIndexIngredientType inSection:0];
-    [colVwIngredientType selectItemAtIndexPath:indexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
+    if([_ingredientTypeList count]>0)
+    {
+        NSIndexPath *indexPath = [NSIndexPath indexPathForItem:_selectedIndexIngredientType inSection:0];
+        [colVwIngredientType selectItemAtIndexPath:indexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
+        [self collectionView:colVwIngredientType didSelectItemAtIndexPath:indexPath];
+    }
 }
 
 #pragma mark <UICollectionViewDataSource>
@@ -245,7 +279,7 @@ static NSString * const reuseIdentifierCell = @"CustomCollectionViewCell";
     else if([collectionView isEqual:colVwIngredient])
     {
         NSInteger countColumn = 6;
-        return ([_ingredientList count]+1)*countColumn;
+        return ([_ingredientList count])*countColumn;
     }
     return 1;
 }
@@ -288,47 +322,30 @@ static NSString * const reuseIdentifierCell = @"CustomCollectionViewCell";
     {
         CustomCollectionViewCell *cell = (CustomCollectionViewCell*)[collectionView dequeueReusableCellWithReuseIdentifier:reuseIdentifierCell forIndexPath:indexPath];
         cell.contentView.userInteractionEnabled = NO;
-        cell.layer.borderWidth = 1;
         cell.lblTextLabel.textColor = [UIColor blackColor];
+
         
         
         NSInteger countColumn = 6;
-        if(item/countColumn == 0)
+
+        cell.vwTopBorder.backgroundColor = [UIColor clearColor];
+        cell.vwBottomBorder.backgroundColor = [UIColor clearColor];
+        cell.vwLeftBorder.backgroundColor = [UIColor clearColor];
+        cell.vwRightBorder.backgroundColor = [UIColor clearColor];
+        if((item/countColumn)%2 == 0)
         {
-            cell.backgroundColor = [UIColor clearColor];
-            cell.lblTextLabel.textAlignment = NSTextAlignmentCenter;
-            cell.lblTextLabel.font = [UIFont boldSystemFontOfSize:15];
-            switch (item) {
-                case 0:
-                    cell.lblTextLabel.text = @"รายการ";
-                    break;
-                case 1:
-                    cell.lblTextLabel.text = @"สิ้นวันก่อนหน้า";
-                    break;
-                case 2:
-                    cell.lblTextLabel.text = @"รับเข้ามาวันนี้";
-                    break;
-                case 3:
-                    cell.lblTextLabel.text = @"ปริมาณรวมวันนี้";
-                    break;
-                case 4:
-                    cell.lblTextLabel.text = @"ปริมาณที่ต้องการวันนี้";
-                    break;
-                case 5:
-                    cell.lblTextLabel.text = @"หน่วย";
-                    break;
-                default:
-                    break;
-            }
+            cell.backgroundColor = mColVwBgColor;
         }
         else
         {
-            Ingredient *ingredient = _ingredientList[item/countColumn-1];
+            cell.backgroundColor = [UIColor whiteColor];
+        }
+        {
+            Ingredient *ingredient = _ingredientList[item/countColumn];
             cell.lblTextLabel.font = [UIFont systemFontOfSize:15];
             switch (item%countColumn) {
                 case 0:
                 {
-                    cell.backgroundColor = [UIColor clearColor];
                     cell.lblTextLabel.text = ingredient.name;
                     cell.lblTextLabel.textAlignment = NSTextAlignmentLeft;
                 }
@@ -351,13 +368,12 @@ static NSString * const reuseIdentifierCell = @"CustomCollectionViewCell";
                     {
                         amount -= stockUse.amount;
                     }
-                    if(!receiveStockBeforeToday && !stockUse)
+                    if(lastCheckStock && !receiveStockBeforeToday && !stockUse)
                     {
-                        cell.lblTextLabel.textColor = [UIColor greenColor];
+                        cell.lblTextLabel.textColor = mGreen;
                     }
 
-                    NSString *strAmount = [Utility formatDecimal:amount withMinFraction:0 andMaxFraction:2];
-                    cell.backgroundColor = [UIColor clearColor];
+                    NSString *strAmount = [Utility formatDecimal:amount withMinFraction:0 andMaxFraction:4];
                     cell.lblTextLabel.text = strAmount;
                     cell.lblTextLabel.textAlignment = NSTextAlignmentCenter;
                 }
@@ -370,8 +386,7 @@ static NSString * const reuseIdentifierCell = @"CustomCollectionViewCell";
                     {
                         amount = receiveStockToday.amount;
                     }
-                    NSString *strAmount = [Utility formatDecimal:amount withMinFraction:0 andMaxFraction:2];
-                    cell.backgroundColor = [UIColor clearColor];
+                    NSString *strAmount = [Utility formatDecimal:amount withMinFraction:0 andMaxFraction:4];
                     cell.lblTextLabel.text = strAmount;
                     cell.lblTextLabel.textAlignment = NSTextAlignmentCenter;
                 }
@@ -407,8 +422,7 @@ static NSString * const reuseIdentifierCell = @"CustomCollectionViewCell";
                         }
                     }
                     float amount = stockBeforeToday + stockToday;
-                    NSString *strAmount = [Utility formatDecimal:amount withMinFraction:0 andMaxFraction:2];
-                    cell.backgroundColor = [UIColor clearColor];
+                    NSString *strAmount = [Utility formatDecimal:amount withMinFraction:0 andMaxFraction:4];
                     cell.lblTextLabel.text = strAmount;
                     cell.lblTextLabel.textAlignment = NSTextAlignmentCenter;
                 }
@@ -457,21 +471,18 @@ static NSString * const reuseIdentifierCell = @"CustomCollectionViewCell";
                     }
                     if(amount > allStock)
                     {
-                        cell.backgroundColor = mRed;
-                    }
-                    else
-                    {
-                        cell.backgroundColor = [UIColor clearColor];
+//                        cell.backgroundColor = mRed;
+                        cell.lblTextLabel.textColor = mRed;
                     }
                     
-                    NSString *strAmount = [Utility formatDecimal:amount withMinFraction:0 andMaxFraction:2];
+                    
+                    NSString *strAmount = [Utility formatDecimal:amount withMinFraction:0 andMaxFraction:4];
                     cell.lblTextLabel.text = strAmount;
                     cell.lblTextLabel.textAlignment = NSTextAlignmentCenter;
                 }
                     break;
                 case 5:
                 {
-                    cell.backgroundColor = [UIColor clearColor];
                     cell.lblTextLabel.text = ingredient.uom;
                     cell.lblTextLabel.textAlignment = NSTextAlignmentCenter;
                 }
@@ -577,15 +588,26 @@ minimumInteritemSpacingForSectionAtIndex:(NSInteger)section
 
 - (UICollectionReusableView *)collectionView:(UICollectionView *)collectionView viewForSupplementaryElementOfKind:(NSString *)kind atIndexPath:(NSIndexPath *)indexPath
 {
-    NSInteger section = indexPath.section;
     UICollectionReusableView *reusableview = nil;
     
     
     if (kind == UICollectionElementKindSectionHeader)
     {
-        UICollectionReusableView *headerView = [collectionView dequeueReusableSupplementaryViewOfKind:UICollectionElementKindSectionHeader withReuseIdentifier:@"header" forIndexPath:indexPath];
-        
-        
+        UICollectionReusableView *headerView = [collectionView dequeueReusableSupplementaryViewOfKind:UICollectionElementKindSectionHeader withReuseIdentifier:reuseHeaderViewIdentifier forIndexPath:indexPath];
+        NSArray *headerColumn = @[@"\nรายการ",@"A\nสิ้นวันก่อนหน้า",@"B\nรับเข้ามาวันนี้",@"C=A+B\nปริมาณรวมวันนี้",@"D\nปริมาณที่ต้องการวันนี้",@"\nหน่วย"];
+        NSInteger countColumn = [headerColumn count];
+        float columnWidth = collectionView.frame.size.width/countColumn;
+        for(int i=0; i<countColumn; i++)
+        {
+            UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(i*columnWidth, 0, columnWidth, 44)];
+            label.font = [UIFont boldSystemFontOfSize:15];
+            label.text = headerColumn[i];
+            label.textAlignment = NSTextAlignmentCenter;
+            label.numberOfLines = 2;
+            label.backgroundColor = mBlueBackGroundColor;
+            [headerView addSubview:label];
+        }
+
         
         reusableview = headerView;
     }
@@ -601,12 +623,21 @@ minimumInteritemSpacingForSectionAtIndex:(NSInteger)section
 
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout referenceSizeForHeaderInSection:(NSInteger)section;
 {
-    CGSize headerSize = CGSizeMake(collectionView.bounds.size.width, 0);
-    return headerSize;
+    if([collectionView isEqual:colVwIngredient])
+    {
+        CGSize headerSize = CGSizeMake(collectionView.bounds.size.width, 44);
+        return headerSize;
+    }
+    else
+    {
+        CGSize headerSize = CGSizeMake(collectionView.bounds.size.width, 0);
+        return headerSize;
+    }
 }
 
-
-- (IBAction)MaterialCheck:(id)sender {
+- (IBAction)ingredientCheck:(id)sender
+{
+    [self performSegueWithIdentifier:@"segIngredientCheck" sender:self];
 }
 
 - (void)itemsDownloaded:(NSArray *)items
@@ -621,32 +652,16 @@ minimumInteritemSpacingForSectionAtIndex:(NSInteger)section
         _receiveStockTodayList = [items[3] mutableCopy];
         _stockSalesConList = [items[4] mutableCopy];
         
-        [self removeOverlayViews];
+        
         
        
-        if([_ingredientTypeList count]>0)
-        {
-            [self selectIngredientType];
-        }
-        
-        
-        //reload colVwIngredient
-        if([_ingredientTypeList count]>0)
-        {
-            IngredientType *ingredientType = _ingredientTypeList[_selectedIndexIngredientType];
-            _ingredientList = [Ingredient getIngredientListWithIngredientTypeID:ingredientType.ingredientTypeID status:1];
-        }
-        else
-        {
-            _ingredientList = [[NSMutableArray alloc]init];
-        }
-        
-        
+        [self selectIngredientType];
         [colVwIngredient reloadData];
+        [self removeOverlayViews];
     }
 }
 
--(void)downloadMaterialInventory
+-(void)downloadInventory
 {
     [self loadingOverlayView];
     self.homeModel = [[HomeModel alloc]init];
@@ -657,10 +672,8 @@ minimumInteritemSpacingForSectionAtIndex:(NSInteger)section
     NSNumber *expectedSales = [NSNumber numberWithFloat:[Utility floatValue:txtExpectedSales.text]];
     
     
-    NSCalendar *calendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian];//year christ
-    [calendar setTimeZone:[NSTimeZone timeZoneWithName:@"GMT"]];//local time +7]
-    salesConStartDate = [calendar dateBySettingHour:0 minute:0 second:0 ofDate:salesConStartDate options:0];
-    salesConEndDate = [calendar dateBySettingHour:23 minute:59 second:59 ofDate:salesConEndDate options:0];
+    salesConStartDate = [Utility setStartOfTheDay:salesConStartDate];
+    salesConEndDate = [Utility setEndOfTheDay:salesConEndDate];
     
     
     [self.homeModel downloadItems:dbIngredientNeeded withData:@[date,expectedSales,salesConStartDate,salesConEndDate]];

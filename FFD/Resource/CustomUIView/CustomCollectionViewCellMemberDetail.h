@@ -8,8 +8,20 @@
 
 #import <UIKit/UIKit.h>
 
-@interface CustomCollectionViewCellMemberDetail : UICollectionViewCell
-@property (strong, nonatomic) IBOutlet UILabel *lblTitle;
 
+
+//@protocol CustomCollectionViewCellMemberDetailDelegate
+//- (void)cellWasTapped:(UICollectionViewCell *)cell;
+// @end
+
+
+@interface CustomCollectionViewCellMemberDetail : UICollectionViewCell
+
+
+@property (strong, nonatomic) IBOutlet UIView *vwColor1;
+@property (strong, nonatomic) IBOutlet UIView *vwColor2;
+@property (strong, nonatomic) IBOutlet UIView *vwColor3;
+@property (strong, nonatomic) IBOutlet UILabel *lblTitle;
 @property (strong, nonatomic) IBOutlet UILabel *lblValue;
+@property (strong, nonatomic) IBOutlet UILongPressGestureRecognizer *longPressGestureRecognizer;
 @end

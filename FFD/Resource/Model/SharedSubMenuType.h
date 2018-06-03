@@ -9,5 +9,7 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedSubMenuType : NSObject
+@property (retain, nonatomic) NSMutableArray *subMenuTypeList;
 
++ (SharedSubMenuType *)sharedSubMenuType;
 @end

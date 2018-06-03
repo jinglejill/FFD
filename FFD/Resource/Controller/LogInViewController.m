@@ -7,10 +7,13 @@
 //
 
 #import "LogInViewController.h"
+#import "MainTabBarController.h"
 #import "KeychainWrapper.h"
 #import "Utility.h"
 #import "UserAccount.h"
 #import "Login.h"
+#import "Setting.h"
+
 
 
 @interface LogInViewController ()
@@ -21,16 +24,58 @@
 @synthesize txtUsername;
 @synthesize txtPassword;
 @synthesize btnLogIn;
+@synthesize imgLogo;
+@synthesize btnCheckBoxRememberMe;
+@synthesize credentialsDb;
+
 
 - (IBAction)unwindToLogIn:(UIStoryboardSegue *)segue
 {
+    txtUsername.text = [[NSUserDefaults standardUserDefaults] stringForKey:@"logInUsername"];
+    txtPassword.text = [[NSUserDefaults standardUserDefaults] stringForKey:@"logInPassword"];
+    btnCheckBoxRememberMe.selected = [[NSUserDefaults standardUserDefaults] boolForKey:@"rememberMe"];
+    if(btnCheckBoxRememberMe.selected)
+    {
+        [btnCheckBoxRememberMe setImage:[UIImage imageNamed:@"checkbox.png"] forState:UIControlStateSelected];
+    }
+    else
+    {
+        [btnCheckBoxRememberMe setImage:[UIImage imageNamed:@"uncheckbox.png"] forState:UIControlStateNormal];
+    }
+}
 
+- (IBAction)checkBoxRememberMe:(id)sender
+{
+    UIButton *button = sender;
+    button.selected = !button.selected;
+    if(button.selected)
+    {
+        [button setImage:[UIImage imageNamed:@"checkbox.png"] forState:UIControlStateSelected];
+    }
+    else
+    {
+        [button setImage:[UIImage imageNamed:@"uncheckbox.png"] forState:UIControlStateNormal];
+    }
+}
+
+- (IBAction)rememberMe:(id)sender
+{
+    [self checkBoxRememberMe:btnCheckBoxRememberMe];
 }
 
 -(BOOL)textFieldShouldReturn:(UITextField *)textField
 {
     [btnLogIn sendActionsForControlEvents: UIControlEventTouchUpInside];
     return NO;
+}
+
+-(void)viewDidLayoutSubviews
+{
+    [super viewDidLayoutSubviews];
+    
+    CGRect frame = imgLogo.frame;
+    frame.size.width = frame.size.height*imgLogo.image.size.width/imgLogo.image.size.height;
+    imgLogo.frame = frame;
 }
 
 - (void)loadView
@@ -41,7 +86,22 @@
     txtUsername.delegate = self;
     txtPassword.delegate = self;
     
-    [self setCornerAndShadow:btnLogIn];
+    [self setButtonDesign:btnLogIn];
+    
+    
+    
+    //test
+#if (TARGET_OS_SIMULATOR)
+    {
+        Setting *setting = [Setting getSettingWithKeyName:@"printBill"];
+        setting.value = 0;
+    }
+    {
+        Setting *setting = [Setting getSettingWithKeyName:@"openCashDrawer"];
+        setting.value = 0;
+    }
+    #endif
+    
 }
 
 - (void)viewDidLoad
@@ -58,18 +118,22 @@
     
     
 //    //test for insert username and password
-//    NSString *username = @"jill";
-//    NSString *password = @"jill";
-//    NSString *fullName = @"นที เรืองจิระชูพร";
-//    
-//    
+//    NSString *username = @"por";
+//    NSString *password = @"por";
+//    NSString *fullName = @"por";
+//
+//
 //    UserAccount *userAccount = [[UserAccount alloc]initWithUsername:username password:password deviceToken:[Utility deviceToken] fullName:fullName nickName:@"" email:@"" phoneNo:@"" lineID:@""];
 //    [UserAccount addObject:userAccount];
 //    [self.homeModel insertItems:dbUserAccount withData:userAccount actionScreen:@"Add user account in Login screen"];
 
-    //test
-    txtUsername.text = @"jill";
-    txtPassword.text = @"jill";
+
+
+
+    txtUsername.text = [[NSUserDefaults standardUserDefaults] stringForKey:@"logInUsername"];
+    txtPassword.text = [[NSUserDefaults standardUserDefaults] stringForKey:@"logInPassword"];
+    btnCheckBoxRememberMe.selected = [[NSUserDefaults standardUserDefaults] boolForKey:@"rememberMe"];
+    btnCheckBoxRememberMe.imageView.image = btnCheckBoxRememberMe.selected?[UIImage imageNamed:@"checkbox.png"]:[UIImage imageNamed:@"uncheckbox.png"];
     
     
     UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self.view action:@selector(endEditing:)];
@@ -89,19 +153,44 @@
     }
     
     
-    [Utility setModifiedUser:txtUsername.text];
-    
-    
-    //check device token ในระบบ ว่าตรงกับตัวเองมั๊ย ถ้าไม่ตรงให้ไป alert ที่อีกเครื่องหนึ่ง
-    UserAccount *userAccount = [UserAccount getUserAccountWithUsername:[Utility modifiedUser]];
-    if(![userAccount.deviceToken isEqualToString:[Utility deviceToken]])
+    if(btnCheckBoxRememberMe.selected)
     {
-        userAccount.deviceToken = [Utility deviceToken];
-        userAccount.modifiedUser = [Utility modifiedUser];
-        userAccount.modifiedDate = [Utility currentDateTime];
-        [self.homeModel updateItems:dbUserAccountDeviceToken withData:userAccount actionScreen:@"User account device token"];
+        [[NSUserDefaults standardUserDefaults] setValue:[Utility trimString:txtUsername.text] forKey:@"logInUsername"];
+        [[NSUserDefaults standardUserDefaults] setValue:[Utility trimString:txtPassword.text] forKey:@"logInPassword"];
+        [[NSUserDefaults standardUserDefaults] setBool:1 forKey:@"rememberMe"];
+    }
+    else
+    {
+        [[NSUserDefaults standardUserDefaults] setValue:@"" forKey:@"logInUsername"];
+        [[NSUserDefaults standardUserDefaults] setValue:@"" forKey:@"logInPassword"];
+        [[NSUserDefaults standardUserDefaults] setBool:0 forKey:@"rememberMe"];
     }
     
+    
+
+    NSString *modifiedUser = [NSString stringWithFormat:@"%@",txtUsername.text];
+    [Utility setModifiedUser:modifiedUser];
+    NSLog(@"setModifiedUser: %@",[Utility modifiedUser]);
+    
+
+    //check device token ในระบบ ว่าตรงกับตัวเองมั๊ย ถ้าไม่ตรงให้ไป alert ที่อีกเครื่องหนึ่ง
+    UserAccount *userAccount = [UserAccount getUserAccountWithUsername:txtUsername.text];
+    if(![userAccount.deviceToken isEqualToString:[Utility deviceToken]])
+    {
+        NSLog(@"useraccount.devicetoken, TOKEN:%@,%@",userAccount.deviceToken,[Utility deviceToken]);
+    }
+    else
+    {
+        NSLog(@"equal useraccount.devicetoken, TOKEN:%@,%@",userAccount.deviceToken,[Utility deviceToken]);
+    }
+    //useraccount table
+    userAccount.deviceToken = [Utility deviceToken];
+    userAccount.modifiedUser = [Utility modifiedUser];
+    userAccount.modifiedDate = [Utility currentDateTime];
+    [self.homeModel updateItems:dbUserAccountDeviceToken withData:userAccount actionScreen:@"User account device token"];
+    
+    
+    //login table
     LogIn *logIn = [[LogIn alloc]initWithUsername:[Utility modifiedUser] status:1 deviceToken:[Utility deviceToken]];
     [LogIn addObject:logIn];
     [self.homeModel insertItems:dbLogIn withData:logIn actionScreen:@"Log in"];
@@ -148,4 +237,14 @@
     return YES;
 }
 
+
+-(void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
+{
+    if([segue.identifier isEqualToString:@"segCustomerTable"])
+    {
+        MainTabBarController *vc = segue.destinationViewController;
+        vc.credentialsDb = credentialsDb;
+    }
+    
+}
 @end

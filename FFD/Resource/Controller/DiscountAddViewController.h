@@ -7,7 +7,14 @@
 //
 
 #import "CustomViewController.h"
+#import "ConfirmAndCancelView.h"
+#import "Discount.h"
 
-@interface DiscountAddViewController : CustomViewController
 
+@interface DiscountAddViewController : CustomViewController<UITableViewDelegate,UITableViewDataSource,UITextFieldDelegate>
+
+@property (strong, nonatomic) IBOutlet UITableView *tbvDiscountAdd;
+@property (strong, nonatomic) ConfirmAndCancelView *vwConfirmAndCancel;
+@property (strong, nonatomic) Discount *editDiscount;
+- (IBAction)goBack:(id)sender;
 @end

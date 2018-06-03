@@ -8,6 +8,8 @@
 
 #import "CommonViewController.h"
 
+
+
 #import <StarIO_Extension/StarIoExtManager.h>
 
 @interface AllReceiptsExtViewController : CommonViewController <StarIoExtManagerDelegate, UIAlertViewDelegate>

@@ -9,5 +9,7 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedReceiptNoTax : NSObject
+@property (retain, nonatomic) NSMutableArray *receiptNoTaxList;
 
++ (SharedReceiptNoTax *)sharedReceiptNoTax;
 @end

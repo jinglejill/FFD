@@ -9,5 +9,5 @@
 #import <UIKit/UIKit.h>
 
 @interface CustomCollectionViewCellImageLabelSwitch : UICollectionViewCell
-
+@property (strong, nonatomic) IBOutlet UISwitch *swtValue;
 @end

@@ -9,5 +9,15 @@
 #import "SharedBoard.h"
 
 @implementation SharedBoard
+@synthesize boardList;
 
++(SharedBoard *)sharedBoard {
+    static dispatch_once_t pred;
+    static SharedBoard *shared = nil;
+    dispatch_once(&pred, ^{
+        shared = [[SharedBoard alloc] init];
+        shared.boardList = [[NSMutableArray alloc]init];
+    });
+    return shared;
+}
 @end

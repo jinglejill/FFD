@@ -9,5 +9,8 @@
 #import <UIKit/UIKit.h>
 
 @interface CustomTableViewCellLabelLabel2 : UITableViewCell
+@property (strong, nonatomic) IBOutlet UILabel *lblText;
+@property (strong, nonatomic) IBOutlet UILabel *lblValue;
+@property (strong, nonatomic) IBOutlet NSLayoutConstraint *lblTextWidthConstant;
 
 @end

@@ -9,9 +9,10 @@
 #import <UIKit/UIKit.h>
 
 @interface CustomPrintPageRenderer : UIPrintPageRenderer
-@property (nonatomic) CGFloat A4PageWidth;
-@property (nonatomic) CGFloat A4PageHeight;
+@property (nonatomic) CGFloat pageWidth;
+@property (nonatomic) CGFloat pageHeight;
 
 - (id)init;
+- (id)initWithPageWidth:(float)width height:(float)height;
 - (NSString *)exportHTMLContentToPDF:(NSMutableArray *)htmlContentList fileName:(NSString *)fileName;
 @end

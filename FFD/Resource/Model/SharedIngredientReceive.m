@@ -9,5 +9,16 @@
 #import "SharedIngredientReceive.h"
 
 @implementation SharedIngredientReceive
+@synthesize ingredientReceiveList;
+
++(SharedIngredientReceive *)sharedIngredientReceive {
+    static dispatch_once_t pred;
+    static SharedIngredientReceive *shared = nil;
+    dispatch_once(&pred, ^{
+        shared = [[SharedIngredientReceive alloc] init];
+        shared.ingredientReceiveList = [[NSMutableArray alloc]init];
+    });
+    return shared;
+}
 
 @end

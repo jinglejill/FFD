@@ -7,27 +7,23 @@
 //
 
 #import "MainTabBarController.h"
+#import "CustomerTableViewController.h"
+
 
 @interface MainTabBarController ()
 
 @end
 
 @implementation MainTabBarController
+@synthesize credentialsDb;
+
 
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view.
-    UIAlertController* alert = [UIAlertController alertControllerWithTitle:NSLocalizedString(@"test alert title", nil)
-                                                                   message:NSLocalizedString(@"test alert message", nil)
-                                                            preferredStyle:UIAlertControllerStyleAlert];
     
-    UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
-                                                          handler:^(UIAlertAction * action) {
-                                                              
-                                                          }];
-    
-    [alert addAction:defaultAction];
-    [self presentViewController:alert animated:YES completion:nil];
+    CustomerTableViewController *vc = [[self viewControllers] objectAtIndex:0];
+    vc.credentialsDb = credentialsDb;
 }
 
 - (void)didReceiveMemoryWarning {

@@ -9,5 +9,6 @@
 #import <UIKit/UIKit.h>
 
 @interface CustomTableViewCellLabelTextView2 : UITableViewCell
-
+@property (strong, nonatomic) IBOutlet UILabel *lblTitle;
+@property (strong, nonatomic) IBOutlet UITextView *txvValue;
 @end

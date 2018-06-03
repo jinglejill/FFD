@@ -9,5 +9,14 @@
 #import "CustomCollectionViewCellLabel.h"
 
 @implementation CustomCollectionViewCellLabel
+@synthesize vwTopBorder;
+@synthesize vwLeftBorder;
+@synthesize vwRightBorder;
 
+- (void)prepareForReuse {
+    [super prepareForReuse];
+    vwTopBorder.backgroundColor = [UIColor clearColor];
+    vwLeftBorder.backgroundColor = [UIColor clearColor];
+    vwLeftBorder.backgroundColor = [UIColor clearColor];
+}
 @end

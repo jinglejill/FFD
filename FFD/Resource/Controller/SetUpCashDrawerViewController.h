@@ -8,6 +8,9 @@
 
 #import "CustomViewController.h"
 
-@interface SetUpCashDrawerViewController : CustomViewController
+@interface SetUpCashDrawerViewController : CustomViewController<UICollectionViewDataSource,UICollectionViewDelegate,UICollectionViewDelegateFlowLayout,UIPopoverPresentationControllerDelegate,UITextFieldDelegate>
+@property (strong, nonatomic) IBOutlet UICollectionView *colVwSetUpCashDrawer;
 
+- (IBAction)unwindToSetUpCashDrawer:(UIStoryboardSegue *)segue;
+- (IBAction)backToSetting:(id)sender;
 @end

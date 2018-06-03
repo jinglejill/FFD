@@ -9,5 +9,8 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedIngredientReceive : NSObject
+@property (retain, nonatomic) NSMutableArray *ingredientReceiveList;
+
++ (SharedIngredientReceive *)sharedIngredientReceive;
 
 @end

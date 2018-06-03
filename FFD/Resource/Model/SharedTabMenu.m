@@ -9,5 +9,15 @@
 #import "SharedTabMenu.h"
 
 @implementation SharedTabMenu
+@synthesize tabMenuList;
 
++(SharedTabMenu *)sharedTabMenu {
+    static dispatch_once_t pred;
+    static SharedTabMenu *shared = nil;
+    dispatch_once(&pred, ^{
+        shared = [[SharedTabMenu alloc] init];
+        shared.tabMenuList = [[NSMutableArray alloc]init];
+    });
+    return shared;
+}
 @end

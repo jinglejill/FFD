@@ -9,5 +9,7 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedBillPrint : NSObject
+@property (retain, nonatomic) NSMutableArray *billPrintList;
 
++ (SharedBillPrint *)sharedBillPrint;
 @end

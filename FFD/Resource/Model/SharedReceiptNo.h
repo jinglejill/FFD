@@ -9,5 +9,8 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedReceiptNo : NSObject
+@property (retain, nonatomic) NSMutableArray *receiptNoList;
+
++ (SharedReceiptNo *)sharedReceiptNo;
 
 @end

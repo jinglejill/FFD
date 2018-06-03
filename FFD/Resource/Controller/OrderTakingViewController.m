@@ -7,10 +7,11 @@
 //
 
 #import "OrderTakingViewController.h"
-#import "CustomCollectionViewCellOrderAdjustHeader.h"
+#import "NoteViewController.h"
 #import "CustomCollectionViewCellOrderAdjust.h"
 #import "CustomCollectionViewCellTabMenuType.h"
 #import "CustomCollectionViewCellMenuWithTakeAway.h"
+#import "CustomCollectionReusableView.h"
 #import "MenuType.h"
 #import "Menu.h"
 #import "TableTaking.h"
@@ -19,25 +20,48 @@
 #import "Note.h"
 #import "OrderNote.h"
 #import "OrderKitchen.h"
-#import "Utility.h"
+#import "SubMenuType.h"
+#import "Receipt.h"
+#import "SpecialPriceProgram.h"
+#import "Setting.h"
+#import "Printer.h"
+#import "MoneyCheck.h"
+#import "InvoiceComposer.h"
+//#import "CustomPrintPageRenderer.h"
+
+
+
+//part printer
+#import "AppDelegate.h"
+#import "Communication.h"
+#import "PrinterFunctions.h"
+#import "ILocalizeReceipts.h"
 
 
 @interface OrderTakingViewController ()
 {
     NSMutableArray *_menuTypeList;
-    NSMutableArray *_menuList;
+    NSMutableArray *_subMenuTypeList;
+    NSMutableArray *_arrOfmenuList;
+    NSMutableArray *_emptyMenuList;
     NSMutableArray *_orderTakingList;
     NSInteger _selectedIndexMenuType;
     NSMutableArray *_noteList;
     NSInteger _selectedOrderAdjustItem;
     UIColor *_blinkColor;
-//    UITapGestureRecognizer *_tapPopUpRecognizer;
+    NSMutableArray *_webViewList;
+    UIView *_backgroundView;
+    NSMutableArray *_arrOfHtmlContentList;
+    NSInteger _countPrint;
+    NSInteger _countingPrint;
+    NSMutableDictionary *_printBillWithPortName;
+    UIPopoverPresentationController *_notePopController;
+    
 }
 @end
 
 @implementation OrderTakingViewController
-static NSString * const reuseIdentifierOrderAdjustHeader = @"CustomCollectionViewCellOrderAdjustHeader";
-static NSString * const reuseHeaderViewIdentifier = @"HeaderView";
+static NSString * const reuseHeaderViewIdentifier = @"CustomCollectionReusableView";
 static NSString * const reuseFooterViewIdentifier = @"FooterView";
 static NSString * const reuseIdentifierOrderAdjust = @"CustomCollectionViewCellOrderAdjust";
 static NSString * const reuseIdentifierOrderTabMenuType = @"CustomCollectionViewCellTabMenuType";
@@ -59,17 +83,16 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
 @synthesize btnSendToKitchen;
 @synthesize colVwTabMenuType;
 @synthesize colVwMenuWithTakeAway;
-@synthesize tbvNote;
 @synthesize btnRearrange;
 @synthesize vwBottomLabelAndButton;
 @synthesize vwTableNameAndServingPerson;
-@synthesize vwConfirmAndCancel;
 
 
 - (void)textFieldDidBeginEditing:(UITextField *)textField
 {
-    [self closeNote:nil];
+    
 }
+
 -(BOOL)textFieldShouldReturn:(UITextField *)textField
 {
     [textField resignFirstResponder];
@@ -84,21 +107,24 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
         //กรณีลบค่า
         if([[Utility trimString:textField.text] isEqualToString:@""])
         {
-            //delete
-            TableTaking *tableTakingExist = [TableTaking getTableTakingWithCustomerTableID:customerTable.customerTableID status:1];
-            if(tableTakingExist)
+            NSMutableArray *orderTakingList = [OrderTaking getOrderTakingListWithCustomerTableID:customerTable.customerTableID statusList:@[@2,@3]];
+            if([orderTakingList count]>0)
+            {
+                TableTaking *tableTakingExist = [TableTaking getTableTakingWithCustomerTableID:customerTable.customerTableID receiptID:0];
+                if(tableTakingExist)
+                {
+                    [self showAlert:@"" message:@"มีการสั่งอาหารไปแล้ว ไม่สามารถลบจำนวนลูกค้าได้"];
+                    textField.text = [NSString stringWithFormat:@"%ld",tableTakingExist.servingPerson];
+                }
+            }
+            else
             {
                 //delete
-                if(tableTakingExist.idInserted)
+                TableTaking *tableTakingExist = [TableTaking getTableTakingWithCustomerTableID:customerTable.customerTableID receiptID:0];
+                if(tableTakingExist)
                 {
+                    //delete
                     [TableTaking removeObject:tableTakingExist];
-                    [self.homeModel deleteItems:dbTableTaking withData:tableTakingExist actionScreen:@"delete serving person in order taking screen"];
-                }
-                else
-                {
-                    [self showAlertAndCallPushSync:@"" message:@"แก้ไขไม่ได้ กรุณาลองใหม่อีกครั้ง"];
-                    NSString *strServingPerson = [Utility formatDecimal:tableTakingExist.servingPerson withMinFraction:0 andMaxFraction:0];
-                    textField.text = strServingPerson;
                 }
             }
         }
@@ -120,31 +146,20 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
         else
         {
             //insert or update tabletaking
-            TableTaking *tableTakingExist = [TableTaking getTableTakingWithCustomerTableID:customerTable.customerTableID status:1];
+            TableTaking *tableTakingExist = [TableTaking getTableTakingWithCustomerTableID:customerTable.customerTableID receiptID:0];
             if(tableTakingExist)
             {
                 //update
-                if(tableTakingExist.idInserted)
-                {
-                    tableTakingExist.servingPerson = [txtServingPerson.text integerValue];
-                    tableTakingExist.modifiedUser = [Utility modifiedUser];
-                    tableTakingExist.modifiedDate = [Utility currentDateTime];
-                    [self.homeModel updateItems:dbTableTaking withData:tableTakingExist actionScreen:@"update serving person in order taking screen"];
-                }
-                else
-                {
-                    [self showAlertAndCallPushSync:@"" message:@"แก้ไขไม่ได้ กรุณาลองใหม่อีกครั้ง"];
-                    NSString *strServingPerson = [Utility formatDecimal:tableTakingExist.servingPerson withMinFraction:0 andMaxFraction:0];
-                    textField.text = strServingPerson;
-                }
+                tableTakingExist.servingPerson = [txtServingPerson.text integerValue];
+                tableTakingExist.modifiedUser = [Utility modifiedUser];
+                tableTakingExist.modifiedDate = [Utility currentDateTime];
             }
             else
             {
                 //insert
-                TableTaking *tableTaking = [[TableTaking alloc]initWithCustomerTableID:customerTable.customerTableID servingPerson:[txtServingPerson.text integerValue] status:1];
+                TableTaking *tableTaking = [[TableTaking alloc]initWithCustomerTableID:customerTable.customerTableID servingPerson:[txtServingPerson.text integerValue] receiptID:0];
                 [TableTaking addObject:tableTaking];
-                [self.homeModel insertItems:dbTableTaking withData:tableTaking actionScreen:@"insert serving person in order taking screen"];
-            }            
+            }
         }
     }
     else if([textField isEqual:txtTableName])
@@ -206,15 +221,15 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
     
     {
         CGRect frame = btnMoveToTrashAll.frame;
-        frame.size.width = (self.view.frame.size.width/3-8)/2;
+        frame.size.width = (self.view.frame.size.width/3-8*2)/2;
         btnMoveToTrashAll.frame = frame;
         [self setImageAndTitleCenter:btnMoveToTrashAll];
         
     }
     {
         CGRect frame = btnSendToKitchen.frame;
-        frame.size.width = (self.view.frame.size.width/3-8)/2;
-        frame.origin.x = frame.size.width + 8;
+        frame.size.width = (self.view.frame.size.width/3-8*2)/2;
+        frame.origin.x = frame.size.width + 8*2;
         btnSendToKitchen.frame = frame;
         [self setImageAndTitleCenter:btnSendToKitchen];
     }
@@ -244,44 +259,146 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
         frame.origin.x = colVwMenuWithTakeAway.frame.origin.x - 8 - frame.size.width;
         btnRearrange.frame = frame;
     }
-}
-
-- (void)setImageAndTitleCenter:(UIButton *)button
-{
-    // the space between the image and text
-    CGFloat spacing = 6.0;
     
-    // lower the text and push it left so it appears centered
-    //  below the image
-    CGSize imageSize = button.imageView.image.size;
-    button.titleEdgeInsets = UIEdgeInsetsMake(
-                                              0.0, - imageSize.width, - (imageSize.height + spacing), 0.0);
+    {
+        CGRect frame = vwBottomLabelAndButton.frame;
+        frame.size.width = colVwOrderAdjust.frame.size.width;
+        frame.origin.y = colVwOrderAdjust.frame.origin.y + colVwOrderAdjust.frame.size.height;
+        frame.size.height = self.view.frame.size.height - colVwOrderAdjust.frame.origin.y - colVwOrderAdjust.frame.size.height;
+        vwBottomLabelAndButton.frame = frame;
+    }
     
-    // raise the image and push it right so it appears centered
-    //  above the text
-    CGSize titleSize = [button.titleLabel.text sizeWithAttributes:@{NSFontAttributeName: button.titleLabel.font}];
-    button.imageEdgeInsets = UIEdgeInsetsMake(
-                                              - (titleSize.height + spacing), 0.0, 0.0, - titleSize.width);
     
-    // increase the content height to avoid clipping
-    CGFloat edgeOffset = fabsf(titleSize.height - imageSize.height) / 2.0;
-    button.contentEdgeInsets = UIEdgeInsetsMake(edgeOffset, 0.0, edgeOffset, 0.0);
+    {
+        CGRect frame = vwTableNameAndServingPerson.frame;
+        frame.size.width = self.view.frame.size.width;//colVwOrderAdjust.frame.size.width;
+        
+        vwTableNameAndServingPerson.frame = frame;
+    }
+    
+    
+    {
+//    take away
+//menu list
+        NSInteger numberOfSection = [_subMenuTypeList count];
+        for(int i=0; i<numberOfSection; i++)
+        {
+            NSMutableArray *menuList = _arrOfmenuList[i];
+            NSInteger numberOfItem = [menuList count];
+            for(int j=0; j<numberOfItem; j++)
+            {
+                Menu *menu = menuList[j];
+                NSIndexPath *indexPath = [NSIndexPath indexPathForItem:j inSection:i];
+                CustomCollectionViewCellMenuWithTakeAway *cell = (CustomCollectionViewCellMenuWithTakeAway *)[colVwMenuWithTakeAway cellForItemAtIndexPath:indexPath];
+                
+                
+                
+                UIColor *color = UIColorFromRGB([Utility hexStringToInt:menu.color]);
+                cell.backgroundColor = color;
+                [self makeBottomRightRoundedCorner:cell.vwRoundedCorner];
+            }
+        }
+    }
+    
+    {
+        CGRect frame = _backgroundView.frame;
+        frame = self.view.frame;
+        _backgroundView.frame = frame;
+    }
 }
 
 - (void)loadView
 {
     [super loadView];
+    [self setCurrentVc];
+    
+    
     txtServingPerson.delegate = self;
     txtTableName.delegate = self;
     _blinkColor = [UIColor clearColor];
     _selectedOrderAdjustItem = -1;
-    
+    _selectedIndexMenuType = 0;
+    _arrOfmenuList = [[NSMutableArray alloc]init];
+    _emptyMenuList = [[NSMutableArray alloc]init];
 
+    
+    
+    //use webview for calculate pdf page size
+    _backgroundView = [[UIView alloc]initWithFrame:self.view.frame];
+    _backgroundView.backgroundColor = [UIColor whiteColor];
+    [self.view insertSubview:_backgroundView atIndex:0];
+    _webViewList = [[NSMutableArray alloc]init];
+    
+    
+    
+    //check idinserted ครั้งเดียวตอนโหลด สำหรับตอนกด back แล้วเข้ามาใหม่
+    NSMutableArray *idInsertedOrderTakingList = [OrderTaking getOrderTakingListWithCustomerTableID:customerTable.customerTableID status:1];
+    if([idInsertedOrderTakingList count]>0)
+    {
+        if(![OrderTaking checkIdInserted:idInsertedOrderTakingList])
+        {
+            [self loadingOverlayView];
+        }
+    }
+    
+    
+    
+    //sendToKitchen button
+    NSInteger period = [self inPeriod:1]?1:[self inPeriod:2]?2:[self inPeriod:3]?3:0;
+    NSString *strKeyNameOpen = [NSString stringWithFormat:@"shift%ldOpenTime",period];
+    NSString *strKeyNameClose = [NSString stringWithFormat:@"shift%ldCloseTime",period];
+    
+    NSString *strShiftOpenTime = [Setting getSettingValueWithKeyName:strKeyNameOpen];
+    NSString *strShiftCloseTime = [Setting getSettingValueWithKeyName:strKeyNameClose];
+    
+    NSInteger intShiftOpenTime = [[strShiftOpenTime stringByReplacingOccurrencesOfString:@":" withString:@""] integerValue];
+    NSInteger intShiftCloseTime = [[strShiftCloseTime stringByReplacingOccurrencesOfString:@":" withString:@""] integerValue];
+    NSDate *dtShiftOpenTime;
+    NSDate *dtShiftCloseTime;
+    NSDate *dtShiftOpenTimeMinus30Min;
+    NSDate *dtStartNextDay;
+    if(intShiftOpenTime <= intShiftCloseTime)
+    {
+        NSString *strToday = [Utility dateToString:[Utility currentDateTime] toFormat:@"yyyy/MM/dd"];
+        dtShiftOpenTime = [Utility stringToDate:[NSString stringWithFormat:@"%@ %@",strToday,strShiftOpenTime] fromFormat:@"yyyy/MM/dd HH:mm"];
+        dtShiftCloseTime = [Utility stringToDate:[NSString stringWithFormat:@"%@ %@",strToday,strShiftCloseTime] fromFormat:@"yyyy/MM/dd HH:mm"];
+        dtShiftOpenTimeMinus30Min = [Utility getPrevious30Min:dtShiftOpenTime];
+    }
+    else
+    {
+        NSDate *currentDate = [Utility currentDateTime];
+        NSDate *nextDay = [Utility getPreviousOrNextDay:1];
+        NSDate *yesterday = [Utility getPreviousOrNextDay:-1];
+        NSString *strToday = [Utility dateToString:[Utility currentDateTime] toFormat:@"yyyy/MM/dd"];
+        NSString *strNextDay = [Utility dateToString:nextDay toFormat:@"yyyy/MM/dd"];
+        NSString *strYesterday = [Utility dateToString:yesterday toFormat:@"yyyy/MM/dd"];
+        dtStartNextDay = [Utility setStartOfTheDay:nextDay];
+        dtShiftOpenTime = [Utility stringToDate:[NSString stringWithFormat:@"%@ %@",strToday,strShiftOpenTime] fromFormat:@"yyyy/MM/dd HH:mm"];
+        dtShiftOpenTimeMinus30Min = [Utility getPrevious30Min:dtShiftOpenTime];
+        NSComparisonResult result = [dtShiftOpenTimeMinus30Min compare:currentDate];
+        NSComparisonResult result2 = [currentDate compare:dtStartNextDay];
+        BOOL compareResult = (result == NSOrderedAscending || result == NSOrderedSame) && (result2 == NSOrderedAscending || result2 == NSOrderedSame);
+        if(compareResult)
+        {
+            dtShiftCloseTime = [Utility stringToDate:[NSString stringWithFormat:@"%@ %@",strNextDay,strShiftCloseTime] fromFormat:@"yyyy/MM/dd HH:mm"];
+        }
+        else
+        {
+            dtShiftOpenTime = [Utility stringToDate:[NSString stringWithFormat:@"%@ %@",strYesterday,strShiftOpenTime] fromFormat:@"yyyy/MM/dd HH:mm"];
+            dtShiftOpenTimeMinus30Min = [Utility getPrevious30Min:dtShiftOpenTime];
+            dtShiftCloseTime = [Utility stringToDate:[NSString stringWithFormat:@"%@ %@",strToday,strShiftCloseTime] fromFormat:@"yyyy/MM/dd HH:mm"];
+        }
+    }
+    NSMutableArray *moneyCheckList = [MoneyCheck getMoneyCheckListWithType:1 checkDateStart:dtShiftOpenTimeMinus30Min checkDateEnd:dtShiftCloseTime];
+    btnSendToKitchen.enabled = [moneyCheckList count]>0;
+    
+    
+    
     [self setShadow:colVwOrderAdjust];
     [self setShadow:colVwMenuWithTakeAway];
-    [self setCornerAndShadow:btnMoveToTrashAll];
-    [self setCornerAndShadow:btnSendToKitchen];
-
+    [self setButtonDesign:btnMoveToTrashAll];
+    [self setButtonDesign:btnSendToKitchen];
+    
     
     [self loadViewProcess];
 }
@@ -290,7 +407,7 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
 {
     //customer table section
     txtTableName.text = customerTable.tableName;
-    TableTaking *tableTakingExist = [TableTaking getTableTakingWithCustomerTableID:customerTable.customerTableID status:1];
+    TableTaking *tableTakingExist = [TableTaking getTableTakingWithCustomerTableID:customerTable.customerTableID receiptID:0];
     if(tableTakingExist)
     {
         NSString *strServingPerson = [Utility formatDecimal:tableTakingExist.servingPerson withMinFraction:0 andMaxFraction:0];
@@ -306,18 +423,18 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
     _menuTypeList = [MenuType getMenuTypeListWithStatus:1];
     if([_menuTypeList count]>0)
     {
-        MenuType *menuType = _menuTypeList[0];
-        _menuList = [Menu getMenuListWithMenuTypeID:menuType.menuTypeID status:1];
-        _menuList = [Menu reorganizeToTwoColumn:_menuList];
+        NSIndexPath *indexPath = [NSIndexPath indexPathForItem:0 inSection:0];
+        [self collectionView:colVwTabMenuType didSelectItemAtIndexPath:indexPath];
     }
     else
     {
-        _menuList = [[NSMutableArray alloc]init];
+        [_arrOfmenuList removeAllObjects];
+        [_arrOfmenuList addObject:_emptyMenuList];
     }
     
     
     //order taking section
-    [self reloadOrderTaking];
+    [self reloadOrderTaking:YES];
     
 }
 
@@ -329,36 +446,18 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
     lblTotalOrderFigure.text = strTotalOrder;
     
     
-    NSString *strTotalAmount = [Utility formatDecimal:[OrderTaking getTotalAmount:_orderTakingList] withMinFraction:0 andMaxFraction:2];
+    NSString *strTotalAmount = [Utility formatDecimal:[OrderTaking getSubTotalAmount:_orderTakingList] withMinFraction:0 andMaxFraction:2];
     lblTotalAmountFigure.text = [NSString stringWithFormat:@"฿%@",strTotalAmount];
 }
 
-- (void)reloadOrderTaking
+- (void)reloadOrderTaking:(BOOL)sort
 {
     _orderTakingList = [OrderTaking getOrderTakingListWithCustomerTableID:customerTable.customerTableID status:1];
-    
-    //order by orderno (orderno = 0 put at the back)
-    for(OrderTaking *item in _orderTakingList)
+    if(sort)
     {
-        Menu *menu = [Menu getMenu:item.menuID];
-        item.menuOrderNo = menu.orderNo;
+        _orderTakingList = [OrderTaking sortOrderTakingList:_orderTakingList];
     }
     
-    NSMutableArray *rearrangeOrderTakingList = [[NSMutableArray alloc]init];
-    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"_orderNo != 0"];
-    NSArray *filterArray = [_orderTakingList filteredArrayUsingPredicate:predicate];
-    
-    
-    NSSortDescriptor *sortDescriptor1 = [[NSSortDescriptor alloc] initWithKey:@"_orderNo" ascending:YES];
-    NSArray *sortDescriptors = [NSArray arrayWithObjects:sortDescriptor1,nil];
-    NSArray *sortArray = [filterArray sortedArrayUsingDescriptors:sortDescriptors];
-    rearrangeOrderTakingList = [sortArray mutableCopy];
-    
-    
-    NSPredicate *predicate2 = [NSPredicate predicateWithFormat:@"_orderNo = 0"];
-    NSArray *filterArray2 = [_orderTakingList filteredArrayUsingPredicate:predicate2];
-    [rearrangeOrderTakingList addObjectsFromArray:filterArray2];
-    _orderTakingList = rearrangeOrderTakingList;
     
     
     [self updateTotalOrderAndAmount];
@@ -367,12 +466,6 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
 
 - (void) orientationChanged:(NSNotification *)note
 {
-    if([tbvNote isDescendantOfView:self.view])
-    {
-        tbvNote.center = CGPointMake(self.view.frame.size.height/2, self.view.frame.size.width/2);
-    }
-    
-    
     UIDevice * device = note.object;
     switch(device.orientation)
     {
@@ -389,16 +482,22 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
     };
 }
 
+- (void)selectMenuType
+{
+    NSIndexPath *indexPath = [NSIndexPath indexPathForItem:_selectedIndexMenuType inSection:0];
+    [colVwTabMenuType selectItemAtIndexPath:indexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
+}
+
 - (void)viewDidLoad
 {
     [super viewDidLoad];
     
     
-    [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
-    [[NSNotificationCenter defaultCenter]
-     addObserver:self selector:@selector(orientationChanged:)
-     name:UIDeviceOrientationDidChangeNotification
-     object:[UIDevice currentDevice]];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(selectMenuType)
+                                                 name:UIApplicationWillEnterForegroundNotification
+                                               object:nil];
+    
     
     
     
@@ -413,10 +512,6 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
     
     
     {
-        UINib *nib = [UINib nibWithNibName:reuseIdentifierOrderAdjustHeader bundle:nil];
-        [colVwOrderAdjust registerNib:nib forCellWithReuseIdentifier:reuseIdentifierOrderAdjustHeader];
-    }
-    {
         UINib *nib = [UINib nibWithNibName:reuseIdentifierOrderAdjust bundle:nil];
         [colVwOrderAdjust registerNib:nib forCellWithReuseIdentifier:reuseIdentifierOrderAdjust];
     }
@@ -428,71 +523,51 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
         UINib *nib = [UINib nibWithNibName:reuseIdentifierMenuWithTakeAway bundle:nil];
         [colVwMenuWithTakeAway registerNib:nib forCellWithReuseIdentifier:reuseIdentifierMenuWithTakeAway];
     }
-    
     {
-        [[NSBundle mainBundle] loadNibNamed:@"TableViewNote" owner:self options:nil];
-        tbvNote.delegate = self;
-        tbvNote.dataSource = self;
-        CGRect frame = tbvNote.frame;
-        frame.size.width = 256;
-        frame.size.height = 400;
-        tbvNote.frame = frame;
-        tbvNote.backgroundColor = [UIColor whiteColor];
-        [tbvNote setSeparatorInset:UIEdgeInsetsMake(16, 16, 16, 16)];
-        [self setShadow:tbvNote radius:8];
-        
-        
-        
-        //add close button
-        UIView *headerView = [[UIView alloc]initWithFrame:CGRectMake(0,0, tbvNote.frame.size.width, 40)];
-        headerView.backgroundColor = [UIColor whiteColor];
-        tbvNote.tableHeaderView = headerView;
-        UILabel *title = [[UILabel alloc]initWithFrame:CGRectMake(0,12, 160, 25)];
-        title.text = @"   เพิ่มหมายเหตุ";
-        title.textColor = [UIColor blackColor];
-        title.font = [UIFont boldSystemFontOfSize:14.0];
-        [headerView addSubview:title];
-        UIButton *btnClose = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-        btnClose.frame = CGRectMake(tbvNote.frame.size.width-25-3,12, 25, 25);
-        btnClose.contentEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 8);
-        btnClose.contentHorizontalAlignment = UIControlContentHorizontalAlignmentRight;
-        [btnClose setTitle:@"X" forState:UIControlStateNormal];
-        [btnClose setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-        [btnClose setBackgroundColor:mBlueColor];
-        
-        [btnClose addTarget:self action:@selector(closeNote:) forControlEvents:UIControlEventTouchUpInside];
-        [headerView addSubview:btnClose];
-        
-        
-//        [[NSBundle mainBundle] loadNibNamed:@"ConfirmAndCancelView" owner:self options:nil];
-//        //add ยืนยัน กับ ยกเลิก button
-////        UIView *footerView = [[UIView alloc]initWithFrame:CGRectMake(0,0, tbvNote.frame.size.width, 44)];
-////        footerView.backgroundColor = [UIColor whiteColor];
-//        tbvNote.tableFooterView = vwConfirmAndCancel;
-//        
-//        [vwConfirmAndCancel.btnConfirm addTarget:self action:@selector(closeNote:) forControlEvents:UIControlEventTouchUpInside];
-
+        UINib *nib = [UINib nibWithNibName:reuseHeaderViewIdentifier bundle:nil];
+        [colVwMenuWithTakeAway registerNib:nib forSupplementaryViewOfKind:UICollectionElementKindSectionHeader withReuseIdentifier:reuseHeaderViewIdentifier];
     }
     
     
-    NSIndexPath *indexPath = [NSIndexPath indexPathForItem:0 inSection:0];
-    [colVwTabMenuType selectItemAtIndexPath:indexPath animated:YES scrollPosition:UICollectionViewScrollPositionNone];
+    [self selectMenuType];
+    
     
     
     UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self.view action:@selector(endEditing:)];
     [self.view addGestureRecognizer:tapGesture];
     [tapGesture setCancelsTouchesInView:NO];
-    
 }
 
 - (IBAction)goBack:(id)sender
 {
+    NSMutableArray *orderNoteList = [OrderNote getOrderNoteListWithCustomerTableID:customerTable.customerTableID];
+    NSMutableArray *orderKitchenList = [[NSMutableArray alloc]init];
+    
+    
+    [self.homeModel insertItems:dbOrderTakingOrderNoteOrderKitchenCustomerTable withData:@[_orderTakingList,orderNoteList,orderKitchenList,customerTable] actionScreen:@"delete then insert orderTaking, orderNote, orderKitchen in orderTaking screen"];
+    
+    
+    
+    
+    //tabletaking
+    TableTaking *tableTaking = [TableTaking getTableTakingWithCustomerTableID:customerTable.customerTableID receiptID:0];
+    if(tableTaking)
+    {
+        [self.homeModel insertItems:dbTableTakingInsertUpdate withData:tableTaking actionScreen:@"update if any or insert tableTaking in ordertaking screen"];
+    }
+    else
+    {
+        [self.homeModel deleteItems:dbTableTakingWithCustomerTable withData:customerTable actionScreen:@"delete tabletaking if any"];
+    }
+    
+    
+    
     [self performSegueWithIdentifier:@"segUnwindToCustomerTable" sender:self];
 }
 
 - (IBAction)moveToTrashAll:(id)sender
 {
-    [self closeNote:nil];
+    
     UIAlertController* alert = [UIAlertController alertControllerWithTitle:nil
                                                                    message:nil
                                                             preferredStyle:UIAlertControllerStyleActionSheet];
@@ -500,72 +575,32 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
      [UIAlertAction actionWithTitle:@"ลบรายการทั้งหมด"
                               style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action)
       {
-          //delete serving person, order list and note list, first validate each if fail return otherwise delete each one.
-          TableTaking *tableTaking = [TableTaking getTableTakingWithCustomerTableID:customerTable.customerTableID status:1];
-          if(tableTaking)
-          {
-              //delete
-              if(!tableTaking.idInserted)
-              {
-                  [self showAlertAndCallPushSync:@"" message:@"ลบรายการทั้งหมดไม่ได้ กรุณาลองใหม่อีกครั้ง"];
-                  return;
-              }
-          }
-          
-          
-          
-          for(OrderTaking *item in _orderTakingList)
-          {
-              if(!item.idInserted)
-              {
-                  [self showAlertAndCallPushSync:@"" message:@"ลบรายการทั้งหมดไม่ได้ กรุณาลองใหม่อีกครั้ง"];
-                  return;
-              }
-          }
-          
-          
-          
-          NSMutableArray *orderNoteList = [OrderNote getOrderNoteListWithCustomerTableID:customerTable.customerTableID];
-          for(OrderNote *item in orderNoteList)
-          {
-              if(!item.idInserted)
-              {
-                  [self showAlertAndCallPushSync:@"" message:@"ลบรายการทั้งหมดไม่ได้ กรุณาลองใหม่อีกครั้ง"];
-                  return;
-              }
-          }
-          
-          
-          //after validate success
           //delete serving person
+          TableTaking *tableTaking = [TableTaking getTableTakingWithCustomerTableID:customerTable.customerTableID receiptID:0];
           if(tableTaking)
           {
               txtServingPerson.text = @"";
               [TableTaking removeObject:tableTaking];
-              [self.homeModel deleteItems:dbTableTaking withData:tableTaking actionScreen:@"Delete serving person from move to trash all in order taking screen"];
           }
           
-        
+          
+          //ลบ note ทั้งหมด
+          NSMutableArray *orderNoteList = [OrderNote getOrderNoteListWithCustomerTableID:customerTable.customerTableID];
+          if([orderNoteList count] > 0)
+          {
+              [OrderNote removeList:orderNoteList];
+          }
+          
           
           //ลบรายการที่สั่ง
           if([_orderTakingList count] > 0)
           {
               [OrderTaking removeList:_orderTakingList];
-              [self.homeModel deleteItems:dbOrderTakingList withData:_orderTakingList actionScreen:@"Delete order taking list from move to trash all in order taking screen"];
-              
           }
           
           
           
-          //ลบ note ทั้งหมด
-          if([orderNoteList count] > 0)
-          {
-              [OrderNote removeList:orderNoteList];
-              [self.homeModel deleteItems:dbOrderNoteList withData:orderNoteList actionScreen:@"Delete note all from move to trash in order taking screen"];
-          }
-          
-          
-          [self reloadOrderTaking];
+          [self reloadOrderTaking:YES];
       }]];
     [alert addAction:
      [UIAlertAction actionWithTitle:@"ยกเลิก"
@@ -584,84 +619,285 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
     }
     
     [self presentViewController:alert animated:YES completion:nil];
-
+    
 }
 
 - (IBAction)sendToKitchen:(id)sender
 {
-    [self closeNote:nil];
-    UIAlertController* alert = [UIAlertController alertControllerWithTitle:nil
-                                                                   message:nil
-                                                            preferredStyle:UIAlertControllerStyleActionSheet];
-    [alert addAction:
-     [UIAlertAction actionWithTitle:@"ส่งรายการไปที่ครัว"
-                              style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action)
-      {
-          //check idinserted
-          for(OrderTaking *item in _orderTakingList)
-          {
-              if(!item.idInserted)
-              {
-                  [self showAlertAndCallPushSync:@"" message:@"ไม่สามารถส่งรายการไปที่ครัวได้ กรุณาลองใหม่อีกครั้ง"];
-                  return;
-              }
-          }
-          
-          //call rearrange first (to sum up duplicate record(remove and update ordertaking))
-          [self reaarangeOrderWithUpdateOrderTakingListInDB:NO];//เพราะมา update ที่ method นี้อยู่แล้วตอนท้าย
-          
-          
-          //add to orderkitchen
-          NSInteger sequenceNo = [OrderKitchen getNextSequenceNo];
-          NSMutableArray *orderKitchenList = [[NSMutableArray alloc]init];
-          for(OrderTaking *item in _orderTakingList)
-          {
-              OrderKitchen *orderKitchen = [[OrderKitchen alloc]initWithCustomerTableID:customerTable.customerTableID orderTakingID:item.orderTakingID sequenceNo:sequenceNo];
-              [orderKitchenList addObject:orderKitchen];
-          }
-          [self.homeModel insertItems:dbOrderKitchenList withData:orderKitchenList actionScreen:@"insert order kitchen from send to kitchen in order taking screen"];
-          
-          
-          
-          //update ordertakinglist
-          for(OrderTaking *item in _orderTakingList)
-          {
-              item.status = 2;
-              item.modifiedUser = [Utility modifiedUser];
-              item.modifiedDate = [Utility currentDateTime];
-          }
-          
-          [self.homeModel updateItems:dbOrderTakingList withData:_orderTakingList actionScreen:@"update status of ordertaking from send to kitchen in order taking screen"];
-          
-          
-
-          [self performSegueWithIdentifier:@"segUnwindToCustomerTable" sender:self];
-      }]];
-    [alert addAction:
-     [UIAlertAction actionWithTitle:@"ยกเลิก"
-                              style:UIAlertActionStyleCancel
-                            handler:^(UIAlertAction *action) {}]];
-    
-    if ( UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad )
+    //validate serving person
+    TableTaking *tableTakingExist = [TableTaking getTableTakingWithCustomerTableID:customerTable.customerTableID receiptID:0];
+    if(tableTakingExist)
     {
-        [alert setModalPresentationStyle:UIModalPresentationPopover];
-        
-        UIPopoverPresentationController *popPresenter = [alert popoverPresentationController];
-        CGRect frame = btnSendToKitchen.bounds;
-        frame.origin.y = frame.origin.y-15;
-        popPresenter.sourceView = btnSendToKitchen;
-        popPresenter.sourceRect = frame;
+        if(!tableTakingExist.servingPerson)
+        {
+            [self showAlert:@"" message:@"กรุณาใส่จำนวนลูกค้า"];
+            return;
+        }
+    }
+    else
+    {
+        [self showAlert:@"" message:@"กรุณาใส่จำนวนลูกค้า"];
+        return;
     }
     
-    [self presentViewController:alert animated:YES completion:nil];
+    
+    
+    if([_orderTakingList count] == 0)
+    {
+        return;
+    }
+    
+    
+    
+    [self loadingOverlayView];
+    [self showStatus:@""];
+    
+    
+    
+    //call rearrange first (to sum up duplicate record(remove and update ordertaking))
+    [self reaarangeOrderWithUpdateOrderTakingListInDB:NO];//เพราะมา update ที่ method นี้อยู่แล้วตอนท้าย (update status of ordertaking)
 
+    
+    
+    //add to orderkitchen
+    //sequenceno เอาจากค่า max ของ ordertaking status = 2
+    NSInteger sequenceNo = [OrderKitchen getNextSequenceNoWithCustomerTableID:customerTable.customerTableID status:2];
+    NSMutableArray *orderKitchenList = [[NSMutableArray alloc]init];
+    for(OrderTaking *item in _orderTakingList)
+    {
+        OrderKitchen *orderKitchen = [[OrderKitchen alloc]initWithCustomerTableID:customerTable.customerTableID orderTakingID:item.orderTakingID sequenceNo:sequenceNo customerTableIDOrder:0];
+        [orderKitchenList addObject:orderKitchen];
+        [OrderKitchen addObject:orderKitchen];
+    }
+    
+    
+    
+    //insert updated ordernote
+    NSMutableArray *orderNoteList = [OrderNote getOrderNoteListWithCustomerTableID:customerTable.customerTableID];
+    
+    
+    
+    //insert update ordertakinglist
+    for(OrderTaking *item in _orderTakingList)
+    {
+        item.status = 2;
+        item.modifiedUser = [Utility modifiedUser];
+        item.modifiedDate = [Utility currentDateTime];
+    }
+    
+    
+    
+    //insert receipt
+    NSMutableArray *receiptList = [[NSMutableArray alloc]init];
+    Receipt *receipt = [Receipt getReceiptWithCustomerTableID:customerTable.customerTableID status:1];
+    if(!receipt)
+    {
+        receipt = [[Receipt alloc]initWithCustomerTableID:customerTable.customerTableID memberID:0 servingPerson:[txtServingPerson.text integerValue] customerType:customerTable.type openTableDate:[Utility currentDateTime] cashAmount:0 cashReceive:0 creditCardType:0 creditCardNo:@"" creditCardAmount:0 transferDate:[Utility notIdentifiedDate] transferAmount:0 remark:@"" discountType:0 discountAmount:0 discountReason:@"" status:1 statusRoute:@"" receiptNoID:@"" receiptNoTaxID:@"" receiptDate:[Utility notIdentifiedDate] mergeReceiptID:0];
+        
+        [Receipt addObject:receipt];
+        [receiptList addObject:receipt];
+    }
+    else
+    {
+        if(receipt.mergeReceiptID == -999)//case split bill
+        {
+            //separate order
+            //split item one by one
+            NSMutableArray *inDbOrderTakingList = _orderTakingList;
+            NSMutableArray *inDbOrderNoteList = [OrderNote getOrderNoteListWithOrderTakingList:inDbOrderTakingList];
+            NSMutableArray *inDbOrderKitchenList = [OrderKitchen getOrderKitchenListWithOrderTakingList:inDbOrderTakingList];
+            NSMutableArray *splitOrderTakingList = [[NSMutableArray alloc]init];
+            NSMutableArray *splitOrderNoteList = [[NSMutableArray alloc]init];
+            NSMutableArray *splitOrderKitchenList = [[NSMutableArray alloc]init];
+            for(OrderTaking *item in _orderTakingList)
+            {
+                for(int i=0; i<item.quantity; i++)
+                {
+                    OrderTaking *orderTaking = [item copy];
+                    orderTaking.orderTakingID = [OrderTaking getNextID];
+                    orderTaking.quantity = 1;
+                    [OrderTaking addObject:orderTaking];
+                    [splitOrderTakingList addObject:orderTaking];
+                    
+                    
+                    
+                    //create new orderNote
+                    NSMutableArray *newOrderNoteList = [[NSMutableArray alloc]init];
+                    NSMutableArray *orderNoteList = [OrderNote getOrderNoteListWithOrderTakingID:item.orderTakingID];
+                    for(OrderNote *item in orderNoteList)
+                    {
+                        OrderNote *orderNote = [item copy];
+                        orderNote.orderNoteID = [OrderNote getNextID];
+                        orderNote.orderTakingID = orderTaking.orderTakingID;
+                        [OrderNote addObject:orderNote];
+                        [newOrderNoteList addObject:orderNote];
+                    }
+                    [splitOrderNoteList addObjectsFromArray:newOrderNoteList];
+                    
+                    
+                    
+                    
+                    //create new orderKitchen
+                    OrderKitchen *selectedOrderKitchen = [OrderKitchen getOrderKitchenWithOrderTakingID:item.orderTakingID];
+                    OrderKitchen *orderKitchen = [selectedOrderKitchen copy];
+                    orderKitchen.orderKitchenID = [OrderKitchen getNextID];
+                    orderKitchen.orderTakingID = orderTaking.orderTakingID;
+                    [OrderKitchen addObject:orderKitchen];
+                    [splitOrderKitchenList addObject:orderKitchen];
+                }
+            }
+            
+            
+            [OrderTaking removeList:inDbOrderTakingList];
+            [OrderNote removeList:inDbOrderNoteList];
+            [OrderKitchen removeList:inDbOrderKitchenList];
+            
+            
+            _orderTakingList = splitOrderTakingList;
+            orderNoteList = splitOrderNoteList;
+            orderKitchenList = splitOrderKitchenList;
+        }
+    }
+    
+
+    
+    NSMutableArray *status2OrderTakingList = [OrderTaking getOrderTakingListWithCustomerTableID:customerTable.customerTableID status:2];
+    if(receipt && receipt.mergeReceiptID == -999 && [status2OrderTakingList count]==[_orderTakingList count])//split bill
+    {
+        [self.homeModel insertItems:dbOrderTakingOrderNoteOrderKitchenReceiptAndReceiptNo withData:@[_orderTakingList,orderNoteList,orderKitchenList,receiptList] actionScreen:@"insert orderTaking, orderNote, orderKitchen, receipt  in orderTaking screen"];
+    }
+    else
+    {
+        [self.homeModel insertItems:dbOrderTakingOrderNoteOrderKitchenReceipt withData:@[_orderTakingList,orderNoteList,orderKitchenList,receiptList] actionScreen:@"insert orderTaking, orderNote, orderKitchen, receipt in orderTaking screen"];
+    }
+    
+    
+    
+
+    
+    //tabletaking
+    TableTaking *tableTaking = [TableTaking getTableTakingWithCustomerTableID:customerTable.customerTableID receiptID:0];
+    if(tableTaking)
+    {
+        [self.homeModel insertItems:dbTableTakingInsertUpdate withData:tableTaking actionScreen:@"update if any or insert tableTaking in ordertaking screen"];
+    }
+    else
+    {
+        [self.homeModel deleteItems:dbTableTakingWithCustomerTable withData:customerTable actionScreen:@"delete tabletaking if any"];
+    }
+    
+    
+    
+    
+    
+    //print kitchen bill
+    _countPrint = 0;
+    _countingPrint = 0;
+    NSMutableDictionary *printDic = [[NSMutableDictionary alloc]init];
+    _printBillWithPortName = [[NSMutableDictionary alloc]init];
+    NSInteger printOrderKitchenByItem = [[Setting getSettingValueWithKeyName:@"printOrderKitchenByItem"] integerValue];
+    {
+        //split kitchen bill to various type printer
+        
+        //foodCheckList
+        NSInteger printFoodCheckList = [[Setting getSettingValueWithKeyName:@"printFoodCheckList"] integerValue];
+        NSInteger printerID = [[Setting getSettingValueWithKeyName:@"foodCheckList"] integerValue];
+        if(printFoodCheckList && printerID)
+        {
+            NSMutableArray *printOrderKitchenList = [[NSMutableArray alloc]init];
+            {
+                if([orderKitchenList count]>0)
+                {
+                    [printOrderKitchenList addObject:orderKitchenList];
+                }
+            }
+            if([printOrderKitchenList count]>0)
+            {
+                _countPrint = _countPrint+[printOrderKitchenList count];
+                Printer *printer = [Printer getPrinter:printerID];
+                [printDic setValue:printOrderKitchenList forKey:printer.portName];
+            }
+        }
+
+    
+
+
+        //printerKitchenMenuTypeID
+        NSMutableArray *printerList = [Printer getPrinterList];
+        for(int i=0; i<[printerList count]; i++)
+        {
+            Printer *printer = printerList[i];
+            NSMutableArray *printOrderKitchenList = [[NSMutableArray alloc]init];
+            NSString *printerKitchenMenuTypeID = printer.menuTypeIDListInText;
+            NSArray* menuTypeIDList = [printerKitchenMenuTypeID componentsSeparatedByString: @","];
+            for(NSString *item in menuTypeIDList)
+            {
+                NSMutableArray *orderKitchenMenuTypeIDList = [OrderKitchen getOrderKitchenListWithMenuTypeID:[item integerValue] orderKitchenList:orderKitchenList];
+                
+                if(printOrderKitchenByItem)
+                {
+                    for(OrderKitchen *orderKitchen in orderKitchenMenuTypeIDList)
+                    {
+                        OrderTaking *orderTaking = [OrderTaking getOrderTaking:orderKitchen.orderTakingID];
+                        for(int i=0; i<orderTaking.quantity; i++)
+                        {
+                            NSMutableArray *orderKitchenList = [[NSMutableArray alloc]init];
+                            [orderKitchenList addObject:orderKitchen];
+                            [printOrderKitchenList addObject:orderKitchenList];
+                        }
+                    }
+                }
+                else
+                {
+                    [printOrderKitchenList addObject:orderKitchenMenuTypeIDList];
+                }
+            }
+            if([printOrderKitchenList count]>0)
+            {
+                _countPrint = _countPrint+[printOrderKitchenList count];
+                [printDic setValue:printOrderKitchenList forKey:printer.portName];
+            }
+        }
+    
+        
+       
+        
+        
+        //port with bill and order
+        _arrOfHtmlContentList = [[NSMutableArray alloc]init];
+        for(int i=0; i<_countPrint; i++)
+        {
+            UIWebView *webView = [[UIWebView alloc]initWithFrame:CGRectMake(0, 0, 580,100)];
+            webView.delegate = self;
+            [self.view insertSubview:webView atIndex:0];
+            [_webViewList addObject:webView];
+        }
+        int i=0;
+        for(NSString *key in printDic)//printDic คือตัวเครื่องพิมพ์
+        {
+            NSMutableArray *printOrderKitchenList = [printDic objectForKey:key];
+            for(NSMutableArray *orderKitchenMenuTypeIDList in printOrderKitchenList)
+            {
+                [_printBillWithPortName setValue:key forKey:[NSString stringWithFormat:@"%d",i]];
+                if([key isEqualToString:@"foodCheckList"])//foodCheckList คือรวมทุกรายการในบิลเดียว หัวบิลแสดงคำว่าทั้งหมด, ถ้าไม่ใช่คือพิมพ์ 1 ที่ต่อ 1 บิล หัวบิลแสดงหมวดอาหารรายการนั้น
+                {
+                    [self printKitchenBill:orderKitchenMenuTypeIDList orderNo:i foodCheckList:YES];
+                }
+                else
+                {
+                    [self printKitchenBill:orderKitchenMenuTypeIDList orderNo:i foodCheckList:NO];
+                }
+                i++;
+            }
+        }        
+    }
 }
 
 - (IBAction)rearrangeOrder:(id)sender
 {
-    [self closeNote:nil];
+    
     [self reaarangeOrderWithUpdateOrderTakingListInDB:YES];
-    [self reloadOrderTaking];
+    [self reloadOrderTaking:YES];
 }
 
 - (void)reaarangeOrderWithUpdateOrderTakingListInDB:(BOOL)update
@@ -674,15 +910,18 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
     {
         Menu *menu = [Menu getMenu:item.menuID];
         item.menuOrderNo = menu.orderNo;
+        SubMenuType *subMenuType = [SubMenuType getSubMenuType:menu.subMenuTypeID];
+        item.subMenuOrderNo = subMenuType.orderNo;
     }
-    NSSortDescriptor *sortDescriptor1 = [[NSSortDescriptor alloc] initWithKey:@"_takeAway" ascending:YES];
-    NSSortDescriptor *sortDescriptor2 = [[NSSortDescriptor alloc] initWithKey:@"_menuOrderNo" ascending:YES];
-    NSSortDescriptor *sortDescriptor3 = [[NSSortDescriptor alloc] initWithKey:@"_noteIDListInText" ascending:YES];
-    NSArray *sortDescriptors = [NSArray arrayWithObjects:sortDescriptor1,sortDescriptor2,sortDescriptor3,nil];
+    NSSortDescriptor *sortDescriptor = [[NSSortDescriptor alloc] initWithKey:@"_takeAway" ascending:YES];
+    NSSortDescriptor *sortDescriptor2 = [[NSSortDescriptor alloc] initWithKey:@"_subMenuOrderNo" ascending:YES];
+    NSSortDescriptor *sortDescriptor3 = [[NSSortDescriptor alloc] initWithKey:@"_menuOrderNo" ascending:YES];
+    NSSortDescriptor *sortDescriptor4 = [[NSSortDescriptor alloc] initWithKey:@"_noteIDListInText" ascending:YES];
+    NSArray *sortDescriptors = [NSArray arrayWithObjects:sortDescriptor,sortDescriptor2,sortDescriptor3,sortDescriptor4,nil];
     NSArray *sortArray = [_orderTakingList sortedArrayUsingDescriptors:sortDescriptors];
     
     
-    NSMutableArray *rearrangeList = [[NSMutableArray alloc]init];
+    
     NSMutableArray *removeList = [[NSMutableArray alloc]init];
     NSMutableArray *updateList = [[NSMutableArray alloc]init];
     NSMutableArray *reservedList = [[NSMutableArray alloc]init];
@@ -697,10 +936,6 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
     {
         if(i == 0)
         {
-            [reservedList addObject:item];
-            previousTakeAway = item.takeAway;
-            previousMenuOrderNo = item.menuOrderNo;
-            previousNoteIDListInText = item.noteIDListInText;
             j++;
         }
         else
@@ -728,7 +963,6 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
                     }
                 }
                 
-                [rearrangeList addObject:reservedList[0]];
                 [reservedList removeAllObjects];
                 j = 1;
             }
@@ -736,12 +970,12 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
             {
                 j++;
             }
-            [reservedList addObject:item];
-            previousTakeAway = item.takeAway;
-            previousMenuOrderNo = item.menuOrderNo;
-            previousNoteIDListInText = item.noteIDListInText;
         }
         
+        [reservedList addObject:item];
+        previousTakeAway = item.takeAway;
+        previousMenuOrderNo = item.menuOrderNo;
+        previousNoteIDListInText = item.noteIDListInText;
         i++;
     }
     //สำหรับตัวสุดท้าย
@@ -766,36 +1000,27 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
         [updateList addObject:reservedList[0]];
     }
     
-    [rearrangeList addObject:reservedList[0]];
     [reservedList removeAllObjects];
     
     
-    
-    
-    //check idinserted before change value
-    for(OrderTaking *item in _orderTakingList)
-    {
-        if(!item.idInserted)
-        {
-            [self showAlertAndCallPushSync:@"" message:@"ไม่สามารถจัดเรียงใหม่ได้ กรุณาลองใหม่อีกครั้ง"];
-            return;
-        }
-    }
-    
+
+    //remove and update
     //remove ordertaking and also ordernote
+    NSMutableArray *allOrderNoteList = [[NSMutableArray alloc]init];
     if([removeList count]>0)
     {
-        NSMutableArray *allOrderNoteList = [[NSMutableArray alloc]init];
         for(OrderTaking *item in removeList)
         {
             NSMutableArray *orderNoteList = [OrderNote getOrderNoteListWithOrderTakingID:item.orderTakingID];
             [allOrderNoteList addObjectsFromArray:orderNoteList];
         }
-        [OrderNote removeList:allOrderNoteList];
-        [self.homeModel deleteItems:dbOrderNoteList withData:allOrderNoteList actionScreen:@"Remove ordernote in rearrange in order taking screen"];
-        [OrderTaking removeList:removeList];
-        [self.homeModel deleteItems:dbOrderTakingList withData:removeList actionScreen:@"Remove ordertaking in rearrange in order taking screen"];
     }
+    [OrderNote removeList:allOrderNoteList];
+
+    
+    [OrderTaking removeList:removeList];
+
+    
     for(OrderTaking *item in checkedIDInsertedList)
     {
         for(OrderTaking *itemUpdate in updateList)
@@ -810,23 +1035,7 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
         }
     }
     [checkedIDInsertedList removeAllObjects];
-    
-    //input orderNo
-    int k = 1;
-    for(OrderTaking *item in rearrangeList)
-    {
-        item.orderNo = k;
-        item.modifiedUser = [Utility modifiedUser];
-        item.modifiedDate = [Utility currentDateTime];
-        k++;
-    }
-    
-    
-    //reaarange list includes change quantity and input order no
-    if(update)
-    {
-        [self.homeModel updateItems:dbOrderTakingList withData:rearrangeList actionScreen:@"Update part in rearrange in order taking screen"];
-    }
+
 }
 
 - (IBAction)rearrangeOrderTouchDown:(id)sender
@@ -844,7 +1053,13 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
 
 - (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView
 {
-    return  1;
+    NSInteger numberOfSection = 1;
+    if([collectionView isEqual:colVwMenuWithTakeAway])
+    {
+        numberOfSection = [_subMenuTypeList count];
+    }
+    
+    return  numberOfSection;
 }
 
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section
@@ -861,15 +1076,17 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
     else if([collectionView isEqual:colVwMenuWithTakeAway])
     {
         //load menu มาโชว์
-        return [_menuList count];
+        NSMutableArray *menuList = _arrOfmenuList[section];
+        return [menuList count];
     }
     return 1;
 }
 
-- (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
-    
+- (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
+{
     
     NSInteger item = indexPath.item;
+    NSInteger section = indexPath.section;
     if([collectionView isEqual:colVwOrderAdjust])
     {
         CustomCollectionViewCellOrderAdjust *cell = (CustomCollectionViewCellOrderAdjust*)[collectionView dequeueReusableCellWithReuseIdentifier:reuseIdentifierOrderAdjust forIndexPath:indexPath];
@@ -878,7 +1095,7 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
         cell.contentView.userInteractionEnabled = NO;
         if(item == _selectedOrderAdjustItem)
         {
-            cell.backgroundColor = mLightGrayColor;
+            cell.backgroundColor = [UIColor groupTableViewBackgroundColor];
         }
         else
         {
@@ -890,16 +1107,25 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
         //menu name
         OrderTaking *orderTaking = _orderTakingList[item];
         Menu *menu = [Menu getMenu:orderTaking.menuID];
+        if(orderTaking.specialPrice == orderTaking.price)
+        {
+            cell.lblTotalPrice.textColor = [UIColor blackColor];
+        }
+        else
+        {
+            cell.lblTotalPrice.textColor = mRed;
+        }
+        
         if(orderTaking.takeAway)
         {
             UIFont *font = [UIFont systemFontOfSize:14];
             NSDictionary *attribute = @{NSUnderlineStyleAttributeName: @(NSUnderlineStyleSingle), NSFontAttributeName: font};
             NSMutableAttributedString *attrString = [[NSMutableAttributedString alloc] initWithString:@"ใส่ห่อ"
-                                                                     attributes:attribute];
+                                                                                           attributes:attribute];
             
             NSDictionary *attribute2 = @{NSFontAttributeName: font};
             NSMutableAttributedString *attrString2 = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@" %@",menu.titleThai] attributes:attribute2];
-           
+            
             
             [attrString appendAttributedString:attrString2];
             cell.lblMenuName.attributedText = attrString;
@@ -910,7 +1136,7 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
         }
         
         
-        CGSize menuNameLabelSize = [self suggestedSizeWithFont:cell.lblMenuName.font size:CGSizeMake(self.view.frame.size.width/3 - 153, CGFLOAT_MAX) lineBreakMode:NSLineBreakByWordWrapping forString:cell.lblMenuName.text];//153 from storyboard
+        CGSize menuNameLabelSize = [self suggestedSizeWithFont:cell.lblMenuName.font size:CGSizeMake(colVwOrderAdjust.frame.size.width - 50-16-16-8, CGFLOAT_MAX) lineBreakMode:NSLineBreakByWordWrapping forString:cell.lblMenuName.text];//153 from storyboard
         CGRect frame = cell.lblMenuName.frame;
         frame.size.width = menuNameLabelSize.width;
         frame.size.height = menuNameLabelSize.height;
@@ -919,20 +1145,74 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
         
         
         //note
-        cell.lblNote.text = [OrderNote getNoteNameListInTextWithOrderTakingID:orderTaking.orderTakingID];
+        NSMutableAttributedString *strAllNote;
+        NSMutableAttributedString *attrStringRemove;
+        NSMutableAttributedString *attrStringAdd;
+        NSString *strRemoveTypeNote = [OrderNote getNoteNameListInTextWithOrderTakingID:orderTaking.orderTakingID noteType:-1];
+        NSString *strAddTypeNote = [OrderNote getNoteNameListInTextWithOrderTakingID:orderTaking.orderTakingID noteType:1];
+        if(![Utility isStringEmpty:strRemoveTypeNote])
+        {
+            UIFont *font = [UIFont systemFontOfSize:11];
+            NSDictionary *attribute = @{NSUnderlineStyleAttributeName: @(NSUnderlineStyleSingle),NSFontAttributeName: font};
+            attrStringRemove = [[NSMutableAttributedString alloc] initWithString:@"ไม่ใส่" attributes:attribute];
+            
+            
+            UIFont *font2 = [UIFont systemFontOfSize:11];
+            NSDictionary *attribute2 = @{NSFontAttributeName: font2};
+            NSMutableAttributedString *attrString2 = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@" %@",strRemoveTypeNote] attributes:attribute2];
+            
+            
+            [attrStringRemove appendAttributedString:attrString2];
+        }
+        if(![Utility isStringEmpty:strAddTypeNote])
+        {
+            UIFont *font = [UIFont systemFontOfSize:11];
+            NSDictionary *attribute = @{NSUnderlineStyleAttributeName: @(NSUnderlineStyleSingle),NSFontAttributeName: font};
+            attrStringAdd = [[NSMutableAttributedString alloc] initWithString:@"เพิ่ม" attributes:attribute];
+            
+            
+            UIFont *font2 = [UIFont systemFontOfSize:11];
+            NSDictionary *attribute2 = @{NSFontAttributeName: font2};
+            NSMutableAttributedString *attrString2 = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@" %@",strAddTypeNote] attributes:attribute2];
+            
+            
+            [attrStringAdd appendAttributedString:attrString2];
+        }
+        if(![Utility isStringEmpty:strRemoveTypeNote])
+        {
+            strAllNote = attrStringRemove;
+            if(![Utility isStringEmpty:strAddTypeNote])
+            {
+                NSMutableAttributedString *attrString = [[NSMutableAttributedString alloc] initWithString:@"\n" attributes:nil];
+                [strAllNote appendAttributedString:attrString];
+                [strAllNote appendAttributedString:attrStringAdd];
+            }
+        }
+        else
+        {
+            if(![Utility isStringEmpty:strAddTypeNote])
+            {
+                strAllNote = attrStringAdd;
+            }
+            else
+            {
+                strAllNote = [[NSMutableAttributedString alloc]init];
+            }
+        }
+        cell.lblNote.attributedText = strAllNote;
         
         
         
-        CGSize noteLabelSize = [self suggestedSizeWithFont:cell.lblNote.font size:CGSizeMake(self.view.frame.size.width/3 - 153, CGFLOAT_MAX) lineBreakMode:NSLineBreakByWordWrapping forString:cell.lblNote.text];
+        CGSize noteLabelSize = [self suggestedSizeWithFont:cell.lblNote.font size:CGSizeMake(colVwOrderAdjust.frame.size.width - 50-16-16-8, CGFLOAT_MAX) lineBreakMode:NSLineBreakByWordWrapping forString:[strAllNote string]];
         CGRect frame2 = cell.lblNote.frame;
         frame2.size.width = noteLabelSize.width;
         frame2.size.height = noteLabelSize.height;
         cell.lblNote.frame = frame2;
-
-
+    
+        
         
         //total price
-        NSString *strTotalPrice = [Utility formatDecimal:orderTaking.quantity*orderTaking.price withMinFraction:0 andMaxFraction:0];
+        NSString *strTotalPrice = [Utility formatDecimal:orderTaking.quantity*orderTaking.specialPrice withMinFraction:0 andMaxFraction:0];
         cell.lblTotalPrice.text = [NSString stringWithFormat:@"฿%@",strTotalPrice];
         
         
@@ -942,25 +1222,25 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
         
         
         //add note
-        cell.btnAddNote.tag = item;//orderTaking.orderTakingID;
+        cell.btnAddNote.tag = item;
         [cell.btnAddNote addTarget:self action:@selector(addNoteTouchDown:) forControlEvents:UIControlEventTouchDown];
         [cell.btnAddNote addTarget:self action:@selector(addNote:) forControlEvents:UIControlEventTouchUpInside];
         
         
         //move to trash
-        cell.btnMoveToTrash.tag = item;//orderTaking.orderTakingID;
+        cell.btnMoveToTrash.tag = item;
         [cell.btnMoveToTrash addTarget:self action:@selector(moveToTrashTouchDown:) forControlEvents:UIControlEventTouchDown];
         [cell.btnMoveToTrash addTarget:self action:@selector(moveToTrash:) forControlEvents:UIControlEventTouchUpInside];
         
         
         //increment
-        cell.btnIncrement.tag = item;//orderTaking.orderTakingID;
+        cell.btnIncrement.tag = item;
         [cell.btnIncrement addTarget:self action:@selector(incrementTouchDown:) forControlEvents:UIControlEventTouchDown];
         [cell.btnIncrement addTarget:self action:@selector(increment:) forControlEvents:UIControlEventTouchUpInside];
         
         
         //decrement
-        cell.btnDecrement.tag = item;//orderTaking.orderTakingID;
+        cell.btnDecrement.tag = item;
         [cell.btnDecrement addTarget:self action:@selector(decrementTouchDown:) forControlEvents:UIControlEventTouchDown];
         [cell.btnDecrement addTarget:self action:@selector(decrement:) forControlEvents:UIControlEventTouchUpInside];
         
@@ -970,7 +1250,6 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
     else if([collectionView isEqual:colVwTabMenuType])
     {
         CustomCollectionViewCellTabMenuType *cell = (CustomCollectionViewCellTabMenuType*)[collectionView dequeueReusableCellWithReuseIdentifier:reuseIdentifierOrderTabMenuType forIndexPath:indexPath];
-
         
         MenuType *menuType = _menuTypeList[item];
         cell.lblMenuType.text = menuType.name;
@@ -1002,11 +1281,14 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
         
         
         cell.contentView.userInteractionEnabled = NO;
+        NSMutableArray *menuList = _arrOfmenuList[section];
+        Menu *menu = menuList[item];
         
-        Menu *menu = _menuList[item];
-        //click menu
+        
+        //tap menu
+        NSString *strDisplayMenu = [NSString stringWithFormat:@"%@: %@",menu.menuCode,menu.titleThai];
         cell.btnMenuName.tag = item;
-        [cell.btnMenuName setTitle:menu.titleThai forState:UIControlStateNormal];
+        [cell.btnMenuName setTitle:strDisplayMenu forState:UIControlStateNormal];
         [cell.btnMenuName addTarget:self action:@selector(addOrderTouchDown:) forControlEvents:UIControlEventTouchDown];
         [cell.btnMenuName addTarget:self action:@selector(addOrder:) forControlEvents:UIControlEventTouchUpInside];
         
@@ -1015,6 +1297,12 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
         cell.btnTakeAway.tag = menu.menuID;
         [cell.btnTakeAway addTarget:self action:@selector(takeAwayTouchDown:) forControlEvents:UIControlEventTouchDown];
         [cell.btnTakeAway addTarget:self action:@selector(takeAway:) forControlEvents:UIControlEventTouchUpInside];
+        
+        
+        
+        UIColor *color = UIColorFromRGB([Utility hexStringToInt:menu.color]);
+        cell.backgroundColor = color;
+        [self makeBottomRightRoundedCorner:cell.vwRoundedCorner];
         
         
         return cell;
@@ -1027,26 +1315,51 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
 {
     if([collectionView isEqual:colVwTabMenuType])
     {
-        [self closeNote:nil];
+       _selectedIndexMenuType = indexPath.item;
         
-        
-        _selectedIndexMenuType = indexPath.item;
         
         
         CustomCollectionViewCellTabMenuType * cell = (CustomCollectionViewCellTabMenuType *)[collectionView cellForItemAtIndexPath:indexPath];
         cell.vwBottomBorder.hidden = YES;
         cell.lblMenuType.font = [UIFont boldSystemFontOfSize:15.0f];
-        cell.backgroundColor = mLightBlueColor;
         cell.lblMenuType.textColor = mBlueColor;
+        cell.backgroundColor = mLightBlueColor;
         
         
+        
+        
+        [_arrOfmenuList removeAllObjects];
         MenuType *menuType = _menuTypeList[_selectedIndexMenuType];
-        _menuList = [Menu getMenuListWithMenuTypeID:menuType.menuTypeID status:1];
-        _menuList = [Menu reorganizeToTwoColumn:_menuList];
+        _subMenuTypeList = [SubMenuType getSubMenuTypeListWithMenuTypeID:menuType.menuTypeID status:1];
+        if([_subMenuTypeList count] == 0)
+        {
+            NSMutableArray *menuList = [Menu getMenuListWithMenuTypeID:menuType.menuTypeID status:1];
+            menuList = [Utility sortDataByColumn:menuList numOfColumn:2];
+            if([menuList count] == 0)
+            {
+                [_arrOfmenuList addObject:_emptyMenuList];
+            }
+            else
+            {
+                [_arrOfmenuList addObject:menuList];
+            }
+        }
+        else
+        {
+            for(SubMenuType *item in _subMenuTypeList)
+            {
+                NSMutableArray *menuList = [Menu getMenuListWithMenuTypeID:menuType.menuTypeID subMenuTypeID:item.subMenuTypeID status:1];
+                menuList = [Utility sortDataByColumn:menuList numOfColumn:2];
+                [_arrOfmenuList addObject:menuList];
+            }
+        }
+        
+        
         [colVwMenuWithTakeAway reloadData];
     }
     else if([collectionView isEqual:colVwOrderAdjust])
     {
+        //programmatically select
         CustomCollectionViewCellOrderAdjust * cell = (CustomCollectionViewCellOrderAdjust *)[collectionView cellForItemAtIndexPath:indexPath];
         cell.backgroundColor = _blinkColor;
         _blinkColor = [UIColor clearColor];
@@ -1073,23 +1386,16 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
     }
     else if([collectionView isEqual:colVwOrderAdjust])
     {
+        //programmatically deselect
         CustomCollectionViewCellOrderAdjust * cell = (CustomCollectionViewCellOrderAdjust *)[collectionView cellForItemAtIndexPath:indexPath];
         cell.backgroundColor = [UIColor clearColor];
     }
 }
 
 #pragma mark <UICollectionViewDelegate>
-- (CGSize)suggestedSizeWithFont:(UIFont *)font size:(CGSize)size lineBreakMode:(NSLineBreakMode)lineBreakMode forString:(NSString *)text {
-    NSMutableParagraphStyle *paragraphStyle = [NSMutableParagraphStyle new];
-    paragraphStyle.lineBreakMode = lineBreakMode;
-    NSAttributedString *attributedString = [[NSAttributedString alloc] initWithString:text attributes:@{NSFontAttributeName: font,       NSParagraphStyleAttributeName: paragraphStyle}];
-    CGRect bounds = [attributedString boundingRectWithSize:size options:NSStringDrawingUsesLineFragmentOrigin context:nil];
-    return bounds.size;
-}
-
-- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
-    
-    CGSize size;
+- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath
+{
+    CGSize size = CGSizeMake(0, 0);
     if([collectionView isEqual:colVwOrderAdjust])
     {
         //load order มาโชว์
@@ -1107,19 +1413,73 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
         }
         
         
+        //note
+        NSMutableAttributedString *strAllNote;
+        NSMutableAttributedString *attrStringRemove;
+        NSMutableAttributedString *attrStringAdd;
+        NSString *strRemoveTypeNote = [OrderNote getNoteNameListInTextWithOrderTakingID:orderTaking.orderTakingID noteType:-1];
+        NSString *strAddTypeNote = [OrderNote getNoteNameListInTextWithOrderTakingID:orderTaking.orderTakingID noteType:1];
+        if(![Utility isStringEmpty:strRemoveTypeNote])
+        {
+            UIFont *font = [UIFont systemFontOfSize:11];
+            NSDictionary *attribute = @{NSUnderlineStyleAttributeName: @(NSUnderlineStyleSingle),NSFontAttributeName: font};
+            attrStringRemove = [[NSMutableAttributedString alloc] initWithString:@"ไม่ใส่" attributes:attribute];
+            
+            
+            UIFont *font2 = [UIFont systemFontOfSize:11];
+            NSDictionary *attribute2 = @{NSFontAttributeName: font2};
+            NSMutableAttributedString *attrString2 = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@" %@",strRemoveTypeNote] attributes:attribute2];
+            
+            
+            [attrStringRemove appendAttributedString:attrString2];
+        }
+        if(![Utility isStringEmpty:strAddTypeNote])
+        {
+            UIFont *font = [UIFont systemFontOfSize:11];
+            NSDictionary *attribute = @{NSUnderlineStyleAttributeName: @(NSUnderlineStyleSingle),NSFontAttributeName: font};
+            attrStringAdd = [[NSMutableAttributedString alloc] initWithString:@"เพิ่ม" attributes:attribute];
+            
+            
+            UIFont *font2 = [UIFont systemFontOfSize:11];
+            NSDictionary *attribute2 = @{NSFontAttributeName: font2};
+            NSMutableAttributedString *attrString2 = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@" %@",strAddTypeNote] attributes:attribute2];
+            
+            
+            [attrStringAdd appendAttributedString:attrString2];
+        }
+        if(![Utility isStringEmpty:strRemoveTypeNote])
+        {
+            strAllNote = attrStringRemove;
+            if(![Utility isStringEmpty:strAddTypeNote])
+            {
+                NSMutableAttributedString *attrString = [[NSMutableAttributedString alloc] initWithString:@"\n" attributes:nil];
+                [strAllNote appendAttributedString:attrString];
+                [strAllNote appendAttributedString:attrStringAdd];
+            }
+        }
+        else
+        {
+            if(![Utility isStringEmpty:strAddTypeNote])
+            {
+                strAllNote = attrStringAdd;
+            }
+            else
+            {
+                strAllNote = [[NSMutableAttributedString alloc]init];
+            }
+        }
+        
+        
+        
         UIFont *fontMenuName = [UIFont systemFontOfSize:14.0];
         UIFont *fontNote = [UIFont systemFontOfSize:11.0];
         
         
-        CGSize menuNameLabelSize = [self suggestedSizeWithFont:fontMenuName size:CGSizeMake(self.view.frame.size.width/3 - 153, CGFLOAT_MAX) lineBreakMode:NSLineBreakByWordWrapping forString:strMenuName];//153 from storyboard
-        CGSize noteLabelSize = [self suggestedSizeWithFont:fontNote size:CGSizeMake(self.view.frame.size.width/3 - 153, CGFLOAT_MAX) lineBreakMode:NSLineBreakByWordWrapping forString:@"ไม่พริก ไม่งอก ไม่เส้น ไม่เค็ม"];
+        CGSize menuNameLabelSize = [self suggestedSizeWithFont:fontMenuName size:CGSizeMake(colVwOrderAdjust.frame.size.width - 50-16-16-8, CGFLOAT_MAX) lineBreakMode:NSLineBreakByWordWrapping forString:strMenuName];//153 from storyboard
+        CGSize noteLabelSize = [self suggestedSizeWithFont:fontNote size:CGSizeMake(colVwOrderAdjust.frame.size.width - 50-16-16-8, CGFLOAT_MAX) lineBreakMode:NSLineBreakByWordWrapping forString:[strAllNote string]];
         
         
-        float height = menuNameLabelSize.height+noteLabelSize.height+13*2;
-        if(height <= (39+30+13))
-        {
-            height = (39+30+13);
-        }
+        float height = menuNameLabelSize.height+noteLabelSize.height+30+8+15+8;
         size = CGSizeMake(colVwOrderAdjust.frame.size.width,height);
     }
     else if([collectionView isEqual:colVwTabMenuType])
@@ -1128,7 +1488,7 @@ static NSString * const reuseIdentifierMenuWithTakeAway = @"CustomCollectionView
         NSInteger column = ceil([_menuTypeList count]/row);
         size = CGSizeMake(colVwTabMenuType.frame.size.width/column,colVwTabMenuType.frame.size.height/row);
     }
-    else// if([collectionView isEqual:colVwMenuWithTakeAway])
+    else if([collectionView isEqual:colVwMenuWithTakeAway])
     {
         //load menu มาโชว์
         size = CGSizeMake(colVwMenuWithTakeAway.frame.size.width/2,44);
@@ -1182,13 +1542,35 @@ minimumInteritemSpacingForSectionAtIndex:(NSInteger)section
 
 - (UICollectionReusableView *)collectionView:(UICollectionView *)collectionView viewForSupplementaryElementOfKind:(NSString *)kind atIndexPath:(NSIndexPath *)indexPath
 {
+    NSInteger section = indexPath.section;
     UICollectionReusableView *reusableview = nil;
     
-    if (kind == UICollectionElementKindSectionHeader) {
-        UICollectionReusableView *headerView = [collectionView dequeueReusableSupplementaryViewOfKind:UICollectionElementKindSectionHeader withReuseIdentifier:@"HeaderView" forIndexPath:indexPath];
-        
-        reusableview = headerView;
+    
+    if([collectionView isEqual:colVwMenuWithTakeAway])
+    {
+        if (kind == UICollectionElementKindSectionHeader)
+        {
+            CustomCollectionReusableView *headerView = [collectionView dequeueReusableSupplementaryViewOfKind:UICollectionElementKindSectionHeader withReuseIdentifier:reuseHeaderViewIdentifier forIndexPath:indexPath];
+            
+            [self setShadow:headerView];
+            if(section == 0)
+            {
+                if([_arrOfmenuList count] > 1)
+                {
+                    SubMenuType *subMenuType = _subMenuTypeList[section];
+                    headerView.lblHeaderName.text = subMenuType.name;
+                }
+            }
+            else
+            {
+                SubMenuType *subMenuType = _subMenuTypeList[section];
+                headerView.lblHeaderName.text = subMenuType.name;
+            }
+            
+            reusableview = headerView;
+        }
     }
+    
     
     if (kind == UICollectionElementKindSectionFooter) {
         UICollectionReusableView *footerview = [collectionView dequeueReusableSupplementaryViewOfKind:UICollectionElementKindSectionFooter withReuseIdentifier:@"footerPayment" forIndexPath:indexPath];
@@ -1202,7 +1584,37 @@ minimumInteritemSpacingForSectionAtIndex:(NSInteger)section
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout referenceSizeForHeaderInSection:(NSInteger)section;
 {
     CGSize headerSize = CGSizeMake(collectionView.bounds.size.width, 0);
+    if([collectionView isEqual:colVwMenuWithTakeAway])
+    {
+        if(section == 0)
+        {
+            if([_arrOfmenuList count] > 1)
+            {
+                //show header
+                headerSize = CGSizeMake(collectionView.bounds.size.width, 25);
+            }
+        }
+        else
+        {
+            headerSize = CGSizeMake(collectionView.bounds.size.width, 25);
+        }
+    }
     return headerSize;
+}
+
+#pragma mark - LXReorderableCollectionViewDataSource methods
+
+- (void)collectionView:(UICollectionView *)collectionView itemAtIndexPath:(NSIndexPath *)fromIndexPath willMoveToIndexPath:(NSIndexPath *)toIndexPath {
+    
+    
+    NSLog(@"will move to index path");
+    NSMutableArray *menuList = _arrOfmenuList[fromIndexPath.section];
+    Menu *menu = menuList[fromIndexPath.item];
+    [menuList removeObjectAtIndex:fromIndexPath.item];
+    
+    NSMutableArray *menuList2 = _arrOfmenuList[toIndexPath.section];
+    [menuList2 insertObject:menu atIndex:toIndexPath.item];
+    
 }
 
 - (void)addOrderTouchDown:(id)sender
@@ -1212,70 +1624,63 @@ minimumInteritemSpacingForSectionAtIndex:(NSInteger)section
     double delayInSeconds = 0.3;//delay 1.3 เพราะไม่อยากให้กดเบิ้ล(กด insert และ update ด้วยปุ่มเดิม) หน่วงเพื่อหลอกตา แต่ว่ามีเช็ค idinserted เผื่อไว้อยู่แล้ว จะใช้ 0.3 กรณีที่ไม่ได้ต้องกดต่อเนื่อง คือ insert แล้ว update หรือ delete โดยใช้ปุ่มเดิม
     dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
     dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-        [button setTitleColor:mDarkGrayColor forState:UIControlStateNormal];
+        [button setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
     });
 }
 
 - (void)addOrder:(id)sender
 {
-    [self closeNote:nil];
+    CGPoint buttonPosition = [sender convertPoint:CGPointZero toView:colVwMenuWithTakeAway];
+    NSIndexPath *tappedIP = [colVwMenuWithTakeAway indexPathForItemAtPoint:buttonPosition];
+    NSMutableArray *menuList = _arrOfmenuList[tappedIP.section];
+    Menu *menu = menuList[tappedIP.item];
     
-    
-    UIButton *button = sender;
-    NSInteger item = button.tag;
-    Menu *menu = _menuList[item];
     
     OrderTaking *orderTakingExist = [OrderTaking getOrderTakingWithCustomerTableID:customerTable.customerTableID menuID:menu.menuID takeAway:0 noteIDListInText:@"" status:1];
     
     //update
     if(orderTakingExist)
     {
-        if(orderTakingExist.idInserted)
-        {
-            orderTakingExist.quantity += 1;
-            orderTakingExist.modifiedUser = [Utility modifiedUser];
-            orderTakingExist.modifiedDate = [Utility currentDateTime];
-            [self.homeModel updateItems:dbOrderTaking withData:orderTakingExist actionScreen:@"click menu in order taking screen"];
-            
-            
-            [self reloadOrderTaking];
-            
-            
-            //scroll to affected cell and blink
-            //get indexPath
-            int i=0;
-            for(OrderTaking *item in _orderTakingList)
-            {
-                if(item.orderTakingID == orderTakingExist.orderTakingID)
-                {
-                    break;
-                }
-                i++;
-            }
+        orderTakingExist.quantity += 1;
+        orderTakingExist.modifiedUser = [Utility modifiedUser];
+        orderTakingExist.modifiedDate = [Utility currentDateTime];
         
-            
-            NSIndexPath *indexPath = [NSIndexPath indexPathForItem:i inSection:0];
-            [colVwOrderAdjust scrollToItemAtIndexPath:indexPath atScrollPosition:UICollectionViewScrollPositionNone animated:YES];
-            
-            double delayInSeconds = 0.3;
-            dispatch_time_t popTime2 = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
-            dispatch_after(popTime2, dispatch_get_main_queue(), ^(void){
-                _blinkColor = mLightGrayColor;
-                [self collectionView:colVwOrderAdjust didSelectItemAtIndexPath:indexPath];
-            });
-        }
-        else
+        
+        [self reloadOrderTaking:NO];
+        
+        
+        //scroll to affected cell and blink
+        //get indexPath
+        int i=0;
+        for(OrderTaking *item in _orderTakingList)
         {
-            [self showAlertAndCallPushSync:@"" message:@"เพิ่มรายการไม่ได้ กรุณาลองใหม่อีกครั้ง"];
+            if(item.orderTakingID == orderTakingExist.orderTakingID)
+            {
+                break;
+            }
+            i++;
         }
+        
+        
+        NSIndexPath *indexPath = [NSIndexPath indexPathForItem:i inSection:0];
+        [colVwOrderAdjust scrollToItemAtIndexPath:indexPath atScrollPosition:UICollectionViewScrollPositionNone animated:YES];
+        
+        double delayInSeconds = 0.3;
+        dispatch_time_t popTime2 = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+        dispatch_after(popTime2, dispatch_get_main_queue(), ^(void){
+            _blinkColor = [UIColor groupTableViewBackgroundColor];;
+            [self collectionView:colVwOrderAdjust didSelectItemAtIndexPath:indexPath];
+        });
     }
     else
     {
-        OrderTaking *orderTaking = [[OrderTaking alloc]initWithCustomerTableID:customerTable.customerTableID menuID:menu.menuID quantity:1 specialPrice:0 price:menu.price takeAway:0 noteIDListInText:@"" orderNo:0 status:1 receiptID:0];
+        SpecialPriceProgram *specialPriceProgram = [SpecialPriceProgram getSpecialPriceProgramTodayWithMenuID:menu.menuID];
+        float specialPrice = specialPriceProgram?specialPriceProgram.specialPrice:menu.price;
+        OrderTaking *orderTaking = [[OrderTaking alloc]initWithCustomerTableID:customerTable.customerTableID menuID:menu.menuID quantity:1 specialPrice:specialPrice price:menu.price takeAway:0 noteIDListInText:@"" orderNo:0 status:1 receiptID:0];
         [OrderTaking addObject:orderTaking];
-        [self.homeModel insertItems:dbOrderTaking withData:orderTaking actionScreen:@"click menu in order taking screen"];
-        
-        [self reloadOrderTaking];
+
+
+        [self reloadOrderTaking:NO];
         
         
         //scroll to affected cell
@@ -1291,15 +1696,12 @@ minimumInteritemSpacingForSectionAtIndex:(NSInteger)section
     double delayInSeconds = 0.3;
     dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
     dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-        [button setImage:[UIImage imageNamed:@"Take away"] forState:UIControlStateNormal];
+        [button setImage:[UIImage imageNamed:@"take away2.png"] forState:UIControlStateNormal];
     });
 }
 
 - (void)takeAway:(id)sender
 {
-    [self closeNote:nil];
-    
-    
     UIButton *button = sender;
     NSInteger menuID = button.tag;
     Menu *menu = [Menu getMenu:menuID];
@@ -1307,54 +1709,51 @@ minimumInteritemSpacingForSectionAtIndex:(NSInteger)section
     OrderTaking *orderTakingExist = [OrderTaking getOrderTakingWithCustomerTableID:customerTable.customerTableID menuID:menuID takeAway:1 noteIDListInText:@"" status:1];
     if(orderTakingExist)
     {
-        if(orderTakingExist.idInserted)
+        orderTakingExist.quantity += 1;
+        orderTakingExist.modifiedUser = [Utility modifiedUser];
+        orderTakingExist.modifiedDate = [Utility currentDateTime];
+        
+        
+        
+        [self reloadOrderTaking:NO];
+        
+        
+        //scroll to affected cell and blink
+        //get indexPath
+        int i=0;
+        for(OrderTaking *item in _orderTakingList)
         {
-            orderTakingExist.quantity += 1;
-            orderTakingExist.modifiedUser = [Utility modifiedUser];
-            orderTakingExist.modifiedDate = [Utility currentDateTime];
-            [self.homeModel updateItems:dbOrderTaking withData:orderTakingExist actionScreen:@"click menu in order taking screen"];
-            
-            
-            [self reloadOrderTaking];
-            
-            
-            //scroll to affected cell and blink
-            //get indexPath
-            int i=0;
-            for(OrderTaking *item in _orderTakingList)
+            if(item.orderTakingID == orderTakingExist.orderTakingID)
             {
-                if(item.orderTakingID == orderTakingExist.orderTakingID)
-                {
-                    break;
-                }
-                i++;
+                break;
             }
-            
-            
-            NSIndexPath *indexPath = [NSIndexPath indexPathForItem:i inSection:0];
-            [colVwOrderAdjust scrollToItemAtIndexPath:indexPath atScrollPosition:UICollectionViewScrollPositionNone animated:YES];
-            
-            double delayInSeconds = 0.3;
-            dispatch_time_t popTime2 = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
-            dispatch_after(popTime2, dispatch_get_main_queue(), ^(void){
-                _blinkColor = mLightGrayColor;
-                [self collectionView:colVwOrderAdjust didSelectItemAtIndexPath:indexPath];
-            });
-
+            i++;
         }
-        else
-        {
-            [self showAlertAndCallPushSync:@"" message:@"เพิ่มรายการไม่ได้ กรุณาลองใหม่อีกครั้ง"];
-        }
+        
+        
+        NSIndexPath *indexPath = [NSIndexPath indexPathForItem:i inSection:0];
+        [colVwOrderAdjust scrollToItemAtIndexPath:indexPath atScrollPosition:UICollectionViewScrollPositionNone animated:YES];
+        
+        double delayInSeconds = 0.3;
+        dispatch_time_t popTime2 = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+        dispatch_after(popTime2, dispatch_get_main_queue(), ^(void){
+            _blinkColor = [UIColor groupTableViewBackgroundColor];;
+            [self collectionView:colVwOrderAdjust didSelectItemAtIndexPath:indexPath];
+        });
+        
     }
     else
     {
-        OrderTaking *orderTaking = [[OrderTaking alloc]initWithCustomerTableID:customerTable.customerTableID menuID:menuID quantity:1 specialPrice:0 price:menu.price takeAway:1 noteIDListInText:@"" orderNo:0 status:1 receiptID:0];
+        float takeAwayFee = [[Setting getSettingValueWithKeyName:@"takeAwayFee"] floatValue];
+        SpecialPriceProgram *specialPriceProgram = [SpecialPriceProgram getSpecialPriceProgramTodayWithMenuID:menuID];
+        float menuPrice = menu.price + takeAwayFee;
+        float specialPrice = specialPriceProgram?specialPriceProgram.specialPrice:menu.price;
+        specialPrice += takeAwayFee;
+        OrderTaking *orderTaking = [[OrderTaking alloc]initWithCustomerTableID:customerTable.customerTableID menuID:menuID quantity:1 specialPrice:specialPrice price:menuPrice takeAway:1 noteIDListInText:@"" orderNo:0 status:1 receiptID:0];
         [OrderTaking addObject:orderTaking];
-        [self.homeModel insertItems:dbOrderTaking withData:orderTaking actionScreen:@"click menu in order taking screen"];
+
         
-        
-        [self reloadOrderTaking];
+        [self reloadOrderTaking:NO];
         
         
         //scroll to affected cell
@@ -1386,21 +1785,38 @@ minimumInteritemSpacingForSectionAtIndex:(NSInteger)section
     _noteList = [MenuTypeNote getNoteListWithMenuTypeID:menu.menuTypeID];
     
     
-    //show note box to select
-    tbvNote.center = CGPointMake(self.view.frame.size.width/2, self.view.frame.size.height/2);
-    [tbvNote reloadData];
     
-    {
-        tbvNote.alpha = 0.0;
-        [self.view addSubview:tbvNote];
-        [UIView animateWithDuration:0.2 animations:^{
-            tbvNote.alpha = 1.0;
-        }];
-    }
     
-    NSIndexPath *indexPath = [NSIndexPath indexPathForItem:item inSection:0];
-    CustomCollectionViewCellOrderAdjust *cell = (CustomCollectionViewCellOrderAdjust *)[colVwOrderAdjust cellForItemAtIndexPath:indexPath];
-    cell.backgroundColor = mLightGrayColor;
+    // grab the view controller we want to show
+    UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"Main" bundle:nil];
+    NoteViewController *controller = [storyboard instantiateViewControllerWithIdentifier:@"NoteViewController"];
+    controller.preferredContentSize = CGSizeMake(728, 728);
+    controller.noteList = _noteList;
+    controller.orderTaking = orderTaking;
+    controller.vc = self;
+    
+    
+    // present the controller
+    // on iPad, this will be a Popover
+    // on iPhone, this will be an action sheet
+    controller.modalPresentationStyle = UIModalPresentationPopover;
+    [self presentViewController:controller animated:YES completion:nil];
+    
+    
+    // configure the Popover presentation controller
+    UIPopoverPresentationController *popController = [controller popoverPresentationController];
+    popController.permittedArrowDirections = UIPopoverArrowDirectionAny;
+    popController.delegate = self;
+    _notePopController = popController;
+    
+    
+    
+    // in case we don't have a bar button as reference
+        NSIndexPath *indexPath = [NSIndexPath indexPathForItem:item inSection:0];
+        CustomCollectionViewCellOrderAdjust *cell = (CustomCollectionViewCellOrderAdjust *)[colVwOrderAdjust cellForItemAtIndexPath:indexPath];
+    popController.sourceView = cell;
+    popController.sourceRect = cell.bounds;
+
 }
 
 - (void)moveToTrashTouchDown:(id)sender
@@ -1416,9 +1832,6 @@ minimumInteritemSpacingForSectionAtIndex:(NSInteger)section
 
 - (void)moveToTrash:(id)sender
 {
-    [self closeNote:nil];
-    
-    
     UIButton *button = sender;
     NSInteger item = button.tag;
     OrderTaking *orderTaking = _orderTakingList[item];
@@ -1430,40 +1843,20 @@ minimumInteritemSpacingForSectionAtIndex:(NSInteger)section
     [alert addAction:
      [UIAlertAction actionWithTitle:@"ลบรายการ"
                               style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action)
-                              {
-                                  if(!orderTaking.idInserted)
-                                  {
-                                      [self showAlertAndCallPushSync:@"" message:@"ลบรายการไม่ได้ กรุณาลองใหม่อีกครั้ง"];
-                                      return;
-                                  }
-                                  
-                                  
-                                  NSMutableArray *orderNoteList = [OrderNote getNoteListWithOrderTakingID:orderTaking.orderTakingID];
-                                  for(OrderNote *item in orderNoteList)
-                                  {
-                                      if(!item.idInserted)
-                                      {
-                                          return;
-                                      }
-                                  }
-                                  
-                                  
-                                  //remove ordertaking
-                                  [OrderTaking removeObject:orderTaking];
-                                  [self.homeModel deleteItems:dbOrderTaking withData:orderTaking actionScreen:@"Remove order in order taking screen"];
-                                  
-                                  
-                                  //remove ordernote
-                                  [OrderNote removeList:orderNoteList];
-                                  [self.homeModel deleteItems:dbOrderNoteList withData:orderNoteList actionScreen:@"Remove order note from move to trash in order taking screen"];
-                                  
-                                  
-                                  [self reloadOrderTaking];
-                              }]];
+      {
+          NSMutableArray *orderNoteList = [OrderNote getOrderNoteListWithOrderTakingID:orderTaking.orderTakingID];
+          [OrderTaking removeObject:orderTaking];
+          [OrderNote removeList:orderNoteList];
+          
+          
+          [self reloadOrderTaking:YES];
+      }]];
+    
     [alert addAction:
      [UIAlertAction actionWithTitle:@"ยกเลิก"
                               style:UIAlertActionStyleCancel
                             handler:^(UIAlertAction *action) {}]];
+    
     
     
     if ( UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad )
@@ -1498,36 +1891,26 @@ minimumInteritemSpacingForSectionAtIndex:(NSInteger)section
 
 - (void)increment:(id)sender
 {
-    [self closeNote:nil];
-    
-    
     UIButton *button = sender;
     NSInteger item = button.tag;
     OrderTaking *orderTaking = _orderTakingList[item];
     
     
-    if(orderTaking.idInserted)
-    {
-        orderTaking.quantity += 1;
-        orderTaking.modifiedUser = [Utility modifiedUser];
-        orderTaking.modifiedDate = [Utility currentDateTime];
-        [self.homeModel updateItems:dbOrderTaking withData:orderTaking actionScreen:@"increment order in order taking screen"];
-        
-        
-        
-        //update display quantity and total price
-        CustomCollectionViewCellOrderAdjust *cell = (CustomCollectionViewCellOrderAdjust *)[colVwOrderAdjust cellForItemAtIndexPath:[NSIndexPath indexPathForItem:item inSection:0]];
-        cell.lblQuantity.text = [Utility formatDecimal:orderTaking.quantity withMinFraction:0 andMaxFraction:0];
-        cell.lblTotalPrice.text = [Utility formatDecimal:orderTaking.quantity*orderTaking.price withMinFraction:0 andMaxFraction:0];
-        
-        
-        //update total order and total amount
-        [self updateTotalOrderAndAmount];
-    }
-    else
-    {
-        [self showAlertAndCallPushSync:@"" message:@"เพิ่มจำนวนรายการไม่ได้ กรุณาลองใหม่อีกครั้ง"];
-    }
+    orderTaking.quantity += 1;
+    orderTaking.modifiedUser = [Utility modifiedUser];
+    orderTaking.modifiedDate = [Utility currentDateTime];
+    
+    
+    
+    
+    //update display quantity and total price
+    CustomCollectionViewCellOrderAdjust *cell = (CustomCollectionViewCellOrderAdjust *)[colVwOrderAdjust cellForItemAtIndexPath:[NSIndexPath indexPathForItem:item inSection:0]];
+    cell.lblQuantity.text = [Utility formatDecimal:orderTaking.quantity withMinFraction:0 andMaxFraction:0];
+    cell.lblTotalPrice.text = [Utility formatDecimal:orderTaking.quantity*orderTaking.specialPrice withMinFraction:0 andMaxFraction:0];
+    
+    
+    //update total order and total amount
+    [self updateTotalOrderAndAmount];
 }
 
 - (void)decrementTouchDown:(id)sender
@@ -1543,261 +1926,283 @@ minimumInteritemSpacingForSectionAtIndex:(NSInteger)section
 
 - (void)decrement:(id)sender
 {
-    [self closeNote:nil];
-    
-    
     UIButton *button = sender;
     NSInteger item = button.tag;
     OrderTaking *orderTaking = _orderTakingList[item];
     
     
-    if(orderTaking.idInserted)
+
+    
+    if(orderTaking.quantity == 1)
     {
-        if(orderTaking.quantity == 1)
+        UIAlertController* alert = [UIAlertController alertControllerWithTitle:nil
+                                                                       message:nil
+                                                                preferredStyle:UIAlertControllerStyleActionSheet];
+        [alert addAction:
+         [UIAlertAction actionWithTitle:@"ลบรายการ"
+                                  style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action)
+          {
+              NSMutableArray *orderNoteList = [OrderNote getOrderNoteListWithOrderTakingID:orderTaking.orderTakingID];
+              [OrderTaking removeObject:orderTaking];
+              [OrderNote removeList:orderNoteList];
+
+              
+              
+              [self reloadOrderTaking:NO];//update เฉพาะ cell ลำบาก เนืองจากเป็นการ remove cell เลยเรียก colvw reload ไปเลย
+              
+          }]];
+        [alert addAction:
+         [UIAlertAction actionWithTitle:@"ยกเลิก"
+                                  style:UIAlertActionStyleCancel
+                                handler:^(UIAlertAction *action) {}]];
+        
+        
+        if ( UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad )
         {
-            UIAlertController* alert = [UIAlertController alertControllerWithTitle:nil
-                                                                           message:nil
-                                                                    preferredStyle:UIAlertControllerStyleActionSheet];
-            [alert addAction:
-             [UIAlertAction actionWithTitle:@"ลบรายการ"
-                                      style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action)
-              {
-                  [OrderTaking removeObject:orderTaking];
-                  [self.homeModel deleteItems:dbOrderTaking withData:orderTaking actionScreen:@"remove order in order taking screen"];
-                  
-                  
-                  [self reloadOrderTaking];//update เฉพาะ cell ลำบาก เนืองจากเป็นการ remove cell เลยเรียก colvw reload ไปเลย
-                  
-              }]];
-            [alert addAction:
-             [UIAlertAction actionWithTitle:@"ยกเลิก"
-                                      style:UIAlertActionStyleCancel
-                                    handler:^(UIAlertAction *action) {}]];
+            NSIndexPath *indexPath = [NSIndexPath indexPathForItem:item inSection:0];
+            CustomCollectionViewCellOrderAdjust *cell = (CustomCollectionViewCellOrderAdjust *)[colVwOrderAdjust cellForItemAtIndexPath:indexPath];
             
             
-            if ( UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad )
-            {
-                NSIndexPath *indexPath = [NSIndexPath indexPathForItem:item inSection:0];
-                CustomCollectionViewCellOrderAdjust *cell = (CustomCollectionViewCellOrderAdjust *)[colVwOrderAdjust cellForItemAtIndexPath:indexPath];
-                
-                
-                [alert setModalPresentationStyle:UIModalPresentationPopover];
-                
-                UIPopoverPresentationController *popPresenter = [alert popoverPresentationController];
-                CGRect frame = cell.btnDecrement.bounds;
-                frame.origin.y = frame.origin.y-15;
-                popPresenter.sourceView = cell.btnDecrement;
-                popPresenter.sourceRect = frame;
-            }
+            [alert setModalPresentationStyle:UIModalPresentationPopover];
             
-            
-            [self presentViewController:alert animated:YES completion:nil];
+            UIPopoverPresentationController *popPresenter = [alert popoverPresentationController];
+            CGRect frame = cell.btnDecrement.bounds;
+            frame.origin.y = frame.origin.y-15;
+            popPresenter.sourceView = cell.btnDecrement;
+            popPresenter.sourceRect = frame;
         }
-        else if(orderTaking.quantity >=2)
+        
+        
+        [self presentViewController:alert animated:YES completion:nil];
+    }
+    else if(orderTaking.quantity >=2)
+    {
+        orderTaking.quantity -= 1;
+        orderTaking.modifiedUser = [Utility modifiedUser];
+        orderTaking.modifiedDate = [Utility currentDateTime];
+
+        
+        
+        //ไม่เรียก colvw reload เพราะมันจะ decrement touch down ผิด cell เลย update เฉพาะ cell ที่แก้ไขไป
+        //update display quantity and total price
+        CustomCollectionViewCellOrderAdjust *cell = (CustomCollectionViewCellOrderAdjust *)[colVwOrderAdjust cellForItemAtIndexPath:[NSIndexPath indexPathForItem:item inSection:0]];
+        cell.lblQuantity.text = [Utility formatDecimal:orderTaking.quantity withMinFraction:0 andMaxFraction:0];
+        cell.lblTotalPrice.text = [Utility formatDecimal:orderTaking.quantity*orderTaking.specialPrice withMinFraction:0 andMaxFraction:0];
+        
+        
+        //update total order and total amount
+        [self updateTotalOrderAndAmount];
+    }
+    
+
+}
+
+- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string
+{
+    if([textField isEqual:txtServingPerson])
+    
+    {
+        NSString *resultingString = [textField.text stringByReplacingCharactersInRange: range withString: string];
+        
+        // The user deleting all input is perfectly acceptable.
+        if ([resultingString length] == 0) {
+            return true;
+        }
+        
+        NSInteger holder;
+        
+        NSScanner *scan = [NSScanner scannerWithString: resultingString];
+        
+        return [scan scanInteger: &holder] && [scan isAtEnd];
+    }
+    return YES;
+}
+
+-(void)printKitchenBill:(NSMutableArray *)orderKitchenList orderNo:(NSInteger)orderNo foodCheckList:(BOOL)foodCheckList
+{
+    //prepare data to print
+    NSInteger printOrderKitchenByItem = [[Setting getSettingValueWithKeyName:@"printOrderKitchenByItem"] integerValue];
+    OrderKitchen *orderKitchen = orderKitchenList[0];
+    OrderTaking *orderTaking = [OrderTaking getOrderTaking:orderKitchen.orderTakingID];
+    Menu *menu = [Menu getMenu:orderTaking.menuID];
+    MenuType *menuType = [MenuType getMenuType:menu.menuTypeID];
+    NSString *restaurantName = [Setting getSettingValueWithKeyName:@"restaurantName"];
+    NSString *customerType = customerTable.tableName;
+    NSString *waiterName = [UserAccount getFirstNameWithFullName:[UserAccount getCurrentUserAccount].fullName];
+    NSString *strMenuType = foodCheckList?@"ทั้งหมด":menuType.name;
+    NSString *sequenceNo = [NSString stringWithFormat:@"%ld",orderKitchen.sequenceNo];
+    NSString *sendToKitchenTime = [Utility dateToString:orderKitchen.modifiedDate toFormat:@"yyyy-MM-dd HH:mm"];
+    
+    
+    
+    
+    //items
+    float sumQuantity = 0;
+    NSMutableArray *items = [[NSMutableArray alloc]init];
+    for(OrderKitchen *item in orderKitchenList)
+    {
+        NSMutableDictionary *dicItem = [[NSMutableDictionary alloc]init];
+        
+        OrderTaking *orderTaking = [OrderTaking getOrderTaking:item.orderTakingID];
+        NSString *strQuantity = [Utility formatDecimal:orderTaking.quantity withMinFraction:0 andMaxFraction:0];
+        Menu *menu = [Menu getMenu:orderTaking.menuID];
+        NSString *removeTypeNote = [OrderNote getNoteNameListInTextWithOrderTakingID:item.orderTakingID noteType:-1];
+        NSString *addTypeNote = [OrderNote getNoteNameListInTextWithOrderTakingID:item.orderTakingID noteType:1];
+        
+        if(printOrderKitchenByItem)
         {
-            orderTaking.quantity -= 1;
-            orderTaking.modifiedUser = [Utility modifiedUser];
-            orderTaking.modifiedDate = [Utility currentDateTime];
-            [self.homeModel updateItems:dbOrderTaking withData:orderTaking actionScreen:@"increment order in order taking screen"];
-            
-            
-            //ไม่เรียก colvw reload เพราะมันจะ decrement touch down ผิด cell เลย update เฉพาะ cell ที่แก้ไขไป
-            //update display quantity and total price
-            CustomCollectionViewCellOrderAdjust *cell = (CustomCollectionViewCellOrderAdjust *)[colVwOrderAdjust cellForItemAtIndexPath:[NSIndexPath indexPathForItem:item inSection:0]];
-            cell.lblQuantity.text = [Utility formatDecimal:orderTaking.quantity withMinFraction:0 andMaxFraction:0];
-            cell.lblTotalPrice.text = [Utility formatDecimal:orderTaking.quantity*orderTaking.price withMinFraction:0 andMaxFraction:0];
-            
-            
-            //update total order and total amount
-            [self updateTotalOrderAndAmount];
+            strQuantity = @"1";
+        }
+        //take away
+        NSString *strTakeAway = @"";
+        if(orderTaking.takeAway)
+        {
+            strTakeAway = @"ใส่ห่อ";
+        }
+        
+        [dicItem setValue:strQuantity forKey:@"quantity"];
+        [dicItem setValue:strTakeAway forKey:@"takeAway"];
+        [dicItem setValue:menu.titleThai forKey:@"menu"];
+        [dicItem setValue:removeTypeNote forKey:@"removeTypeNote"];
+        [dicItem setValue:addTypeNote forKey:@"addTypeNote"];
+        [dicItem setValue:@"" forKey:@"pro"];
+        [dicItem setValue:@"" forKey:@"totalPricePerItem"];
+        [items addObject:dicItem];
+        
+        sumQuantity += orderTaking.quantity;
+    }
+    if(printOrderKitchenByItem)
+    {
+        sumQuantity = 1;
+    }
+    NSString *strTotalQuantity = [Utility formatDecimal:sumQuantity withMinFraction:0 andMaxFraction:0];
+    
+    
+    
+    //create html invoice
+    InvoiceComposer *invoiceComposer = [[InvoiceComposer alloc]init];
+    NSString *invoiceHtml = [invoiceComposer renderKitchenBillWithRestaurantName:restaurantName customerType:customerType waiterName:waiterName menuType:strMenuType sequenceNo:sequenceNo sendToKitchenTime:sendToKitchenTime totalQuantity:strTotalQuantity items:items];
+    
+    
+    
+    
+    UIWebView *webView = _webViewList[orderNo];
+    webView.tag = orderNo;
+    [webView loadHTMLString:invoiceHtml baseURL:NULL];
+}
+
+- (void)webViewDidFinishLoad:(UIWebView *)aWebView
+{
+    [super webViewDidFinishLoad:aWebView];
+    if(self.receiptKitchenBill)
+    {
+        self.receiptKitchenBill = 0;
+        return;
+    }
+    
+    
+    
+    _countingPrint++;
+    NSString *strFileName = [NSString stringWithFormat:@"kitchenBill%ld.pdf",aWebView.tag];
+    NSString *pdfFileName = [self createPDFfromUIView:aWebView saveToDocumentsWithFileName:strFileName];
+    
+    
+
+
+    //convert pdf to uiimage
+    NSURL *pdfUrl = [NSURL fileURLWithPath:pdfFileName];
+    UIImage *pdfImagePrint = [self pdfToImage:pdfUrl];
+    UIImageWriteToSavedPhotosAlbum(pdfImagePrint, nil, nil, nil);
+    
+    
+    NSLog(@"path: %@",pdfFileName);
+//    //TEST
+//    [self removeOverlayViews];
+//    return;
+    
+    
+    NSString *printBill = [Setting getSettingValueWithKeyName:@"printBill"];
+    if(![printBill integerValue])
+    {
+        if(_countingPrint == _countPrint)
+        {
+            [self hideStatus];
+            [self removeOverlayViews];
+            [self performSegueWithIdentifier:@"segUnwindToCustomerTable" sender:self];
         }
     }
     else
     {
-        [self showAlertAndCallPushSync:@"" message:@"ลดจำนวนรายการไม่ได้ กรุณาลองใหม่อีกครั้ง"];
+        //print process
+        NSString *portName = [_printBillWithPortName valueForKey:[NSString stringWithFormat:@"%ld",(long)aWebView.tag]];        
+        [self doPrintProcess:pdfImagePrint portName:portName];
     }
 }
 
-- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    // Return the number of sections.
-    return 1;
-}
-
-- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    // Return the number of rows in the section.
-
-    return [_noteList count];
-}
-
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+-(void)doPrintProcess:(UIImage *)image portName:(NSString *)portName
 {
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"cell"];
-    if (cell == nil)
+    NSData *commands = nil;
+    
+    ISCBBuilder *builder = [StarIoExt createCommandBuilder:[AppDelegate getEmulation]];
+    
+    [builder beginDocument];
+    
+    [builder appendBitmap:image diffusion:NO];
+    
+    [builder appendCutPaper:SCBCutPaperActionPartialCutWithFeed];
+    
+    [builder endDocument];
+    
+    commands = [builder.commands copy];
+    
+    
+    //    NSString *portName     = [AppDelegate getPortName];
+    NSString *portSettings = [AppDelegate getPortSettings];
+    
+    [Communication sendCommands:commands portName:portName portSettings:portSettings timeout:10000 completionHandler:^(BOOL result, NSString *title, NSString *message)
+     {     // 10000mS!!!
+         if(![message isEqualToString:@"พิมพ์สำเร็จ"])
+         {
+             UIAlertController* alert = [UIAlertController alertControllerWithTitle:title
+                                                                            message:message
+                                                                     preferredStyle:UIAlertControllerStyleAlert];
+             
+             UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
+                                                                   handler:^(UIAlertAction * action)
+                                             {
+                                                 if(_countingPrint == _countPrint)
+                                                 {
+                                                     [self hideStatus];
+                                                     [self removeOverlayViews];
+                                                     [self performSegueWithIdentifier:@"segUnwindToCustomerTable" sender:self];
+                                                 }
+//                                                 [self hideStatus];
+//                                                 [self removeOverlayViews];
+//                                                 [self performSegueWithIdentifier:@"segUnwindToCustomerTable" sender:self];
+                                             }];
+             
+             [alert addAction:defaultAction];
+             [self presentViewController:alert animated:YES completion:nil];
+         }
+         else
+         {
+             if(_countingPrint == _countPrint)
+             {
+                 [self hideStatus];
+                 [self removeOverlayViews];
+                 [self performSegueWithIdentifier:@"segUnwindToCustomerTable" sender:self];
+             }
+         }
+     }];
+}
+
+- (BOOL)popoverPresentationControllerShouldDismissPopover:(UIPopoverPresentationController *)popoverPresentationController;
+{
+    if([popoverPresentationController isEqual:_notePopController])
     {
-        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:@"cell"];
-        
+        return NO;
     }
-    
-    NSInteger item = indexPath.item;
-    
-    if(tableView == tbvNote)
-    {
-        Note *note = _noteList[item];
-        OrderTaking *orderTaking = _orderTakingList[_selectedOrderAdjustItem];
-        OrderNote *orderNote = [OrderNote getOrderNoteWithOrderTakingID:orderTaking.orderTakingID noteID:note.noteID];
-        
-        if(orderNote)
-        {
-            cell.textLabel.text = [NSString stringWithFormat:@"✔️ %@",note.name];
-        }
-        else
-        {
-            cell.textLabel.text = [NSString stringWithFormat:@"      %@",note.name];
-        }
-        
-        cell.textLabel.font = [UIFont systemFontOfSize:14.0];
-        
-        
-        NSString *strNotePrice = @"";
-        if(note.price > 0)
-        {
-            strNotePrice = [NSString stringWithFormat:@"+%@",[Utility formatDecimal:note.price withMinFraction:0 andMaxFraction:0]];
-        }
-        else if (note.price < 0)
-        {
-            strNotePrice = [NSString stringWithFormat:@"-%@",[Utility formatDecimal:note.price withMinFraction:0 andMaxFraction:0]];
-        }
-        cell.detailTextLabel.text = strNotePrice;
-        cell.detailTextLabel.textColor = [UIColor blackColor];
-        cell.selectionStyle = UITableViewCellSelectionStyleNone;
-
-        
-    }
-    
-    return cell;
-}
-
-- (void)tableView: (UITableView*)tableView willDisplayCell: (UITableViewCell*)cell forRowAtIndexPath: (NSIndexPath*)indexPath
-{
-    cell.backgroundColor = [UIColor whiteColor];
-    [cell setSeparatorInset:UIEdgeInsetsMake(16, 16, 16, 16)];
-
-    [cell setLayoutMargins:UIEdgeInsetsMake(16, 16, 16, 16)];
-    
-}
-
-- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    NSInteger item = indexPath.item;
-    Note *note = _noteList[item];
-    OrderTaking *orderTaking = _orderTakingList[_selectedOrderAdjustItem];
-    OrderNote *orderNoteExist = [OrderNote getOrderNoteWithOrderTakingID:orderTaking.orderTakingID noteID:note.noteID];
-    
-    
-    UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
-    cell.textLabel.text = [NSString stringWithFormat:@"✔️ %@", note.name];
-    
-    
-    //insert
-    if(!orderNoteExist)//เช็คสำหรับกรณี deselect มาเรียกตอน idinserted ยังไม่พร้อม
-    {
-        if(orderTaking.idInserted)
-        {
-            //inset note
-            OrderNote *orderNote = [[OrderNote alloc]initWithOrderTakingID:orderTaking.orderTakingID noteID:note.noteID];
-            [OrderNote addObject:orderNote];
-            [self.homeModel insertItems:dbOrderNote withData:orderNote actionScreen:@"Select note for order"];
-            
-            
-            
-            //update note id list in text
-            orderTaking.noteIDListInText = [OrderNote getNoteIDListInTextWithOrderTakingID:orderTaking.orderTakingID];
-            
-            
-            //update ordertaking price
-            Menu *menu = [Menu getMenu:orderTaking.menuID];
-            float sumNotePrice = [OrderNote getSumNotePriceWithOrderTakingID:orderTaking.orderTakingID];
-            orderTaking.price = menu.price+sumNotePrice;
-            orderTaking.modifiedUser = [Utility modifiedUser];
-            orderTaking.modifiedDate = [Utility currentDateTime];
-            
-            
-            [self.homeModel updateItems:dbOrderTaking withData:orderTaking actionScreen:@"Add note and price in order taking when select note"];
-            
-            
-            [self reloadOrderTaking];
-
-        }
-        else
-        {
-            [tbvNote deselectRowAtIndexPath:indexPath animated:YES];
-            [self showAlertAndCallPushSync:@"" message:@"เพิ่มโน้ตไม่ได้ กรุณาลองใหม่อีกครั้ง"];
-            return;
-        }
-    }
-}
-
-- (void)tableView:(UITableView *)tableView didDeselectRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    NSInteger item = indexPath.item;
-    Note *note = _noteList[item];
-    OrderTaking *orderTaking = _orderTakingList[_selectedOrderAdjustItem];
-    OrderNote *orderNote = [OrderNote getOrderNoteWithOrderTakingID:orderTaking.orderTakingID noteID:note.noteID];
-    
-    
-    //delete
-    if(orderNote)
-    {
-        if(orderNote.idInserted)
-        {
-            //delete ordernote
-            UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
-            cell.textLabel.text = [NSString stringWithFormat:@"      %@", note.name];
-            
-            
-            [OrderNote removeObject:orderNote];
-            [self.homeModel deleteItems:dbOrderNote withData:orderNote actionScreen:@"Unselect note for order"];
-            
-            
-            
-            
-            //ไม่ต้องเช็ค idinserted ของ ordertaking เพราะ ผ่านการ select note มาแล้วคืือ ordertaking ต้องถูก update มาแล้วแน่นอน
-            //update ordertaking note id list in text
-            orderTaking.noteIDListInText = [OrderNote getNoteIDListInTextWithOrderTakingID:orderTaking.orderTakingID];
-            
-            
-            
-            //update ordertaking price
-            Menu *menu = [Menu getMenu:orderTaking.menuID];
-            float sumNotePrice = [OrderNote getSumNotePriceWithOrderTakingID:orderTaking.orderTakingID];
-            orderTaking.price = menu.price+sumNotePrice;
-            orderTaking.modifiedUser = [Utility modifiedUser];
-            orderTaking.modifiedDate = [Utility currentDateTime];
-            
-            [self.homeModel updateItems:dbOrderTaking withData:orderTaking actionScreen:@"Remove note and price in order taking when select note"];
-            
-            
-            [self reloadOrderTaking];
-        }
-        else
-        {
-            [tbvNote selectRowAtIndexPath:indexPath animated:YES scrollPosition:UITableViewScrollPositionNone];
-            [self showAlertAndCallPushSync:@"" message:@"แก้ไขหมายเหตุไม่ได้ กรุณาลองใหม่อีกครั้ง"];
-            return;
-        }
-    }
-}
-
-- (void)closeNote:(id)sender
-{
-    [tbvNote removeFromSuperview];
-    
-
-    NSIndexPath *indexPath = [NSIndexPath indexPathForItem:_selectedOrderAdjustItem inSection:0];
-    CustomCollectionViewCellOrderAdjust *cell = (CustomCollectionViewCellOrderAdjust *)[colVwOrderAdjust cellForItemAtIndexPath:indexPath];
-    cell.backgroundColor = [UIColor clearColor];
-    
-    _selectedOrderAdjustItem = -1;
+    return YES;
 }
 
 

@@ -9,5 +9,7 @@
 #import <UIKit/UIKit.h>
 
 @interface CustomCollectionViewCellLabelTextFixedWidth : UICollectionViewCell
-
+@property (strong, nonatomic) IBOutlet UILabel *lblTitle;
+@property (strong, nonatomic) IBOutlet UITextField *txtValue;
+@property (strong, nonatomic) IBOutlet NSLayoutConstraint *lblWidthConstant;
 @end

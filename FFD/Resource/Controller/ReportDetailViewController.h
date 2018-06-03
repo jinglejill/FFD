@@ -7,27 +7,10 @@
 //
 
 #import "CustomViewController.h"
-#import "CorePlot-CocoaTouch.h"
-#import "CPDConstants.h"
-#import "CPDStockPriceStore.h"
-#import "CPTGraphHostingView.h"
-#import "CPTTheme.h"
+#import "CustomReportViewController.h"
 
 
 
-@interface ReportDetailViewController : CustomViewController<UITextFieldDelegate,CPTBarPlotDataSource, CPTBarPlotDelegate>//CALayerDelegate
-@property (strong, nonatomic) IBOutlet UIButton *btnListOrGraph;
-@property (strong, nonatomic) IBOutlet UIButton *btnExportData;
-@property (strong, nonatomic) NSDate *startDate;
-@property (strong, nonatomic) NSDate *endDate;
-@property (nonatomic) NSInteger frequencyCriteria;
-
-
-
-- (IBAction)viewInListOrGraph:(id)sender;
-- (IBAction)exportData:(id)sender;
-
-
-
+@interface ReportDetailViewController : CustomReportViewController
 
 @end

@@ -9,5 +9,15 @@
 #import "SharedAddress.h"
 
 @implementation SharedAddress
+@synthesize addressList;
 
++(SharedAddress *)sharedAddress {
+    static dispatch_once_t pred;
+    static SharedAddress *shared = nil;
+    dispatch_once(&pred, ^{
+        shared = [[SharedAddress alloc] init];
+        shared.addressList = [[NSMutableArray alloc]init];
+    });
+    return shared;
+}
 @end

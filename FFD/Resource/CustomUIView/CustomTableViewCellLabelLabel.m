@@ -1,14 +1,14 @@
 //
-//  CustomTableViewCell.m
+//  CustomTableViewCellLabelLabel.m
 //  FFD
 //
 //  Created by Thidaporn Kijkamjai on 10/11/2560 BE.
 //  Copyright © 2560 Appxelent. All rights reserved.
 //
 
-#import "CustomTableViewCell.h"
+#import "CustomTableViewCellLabelLabel.h"
 
-@implementation CustomTableViewCell
+@implementation CustomTableViewCellLabelLabel
 @synthesize longPressGestureRecognizer;
 
 

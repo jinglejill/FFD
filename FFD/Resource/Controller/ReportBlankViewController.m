@@ -13,6 +13,20 @@
 @end
 
 @implementation ReportBlankViewController
+@synthesize startDate;
+@synthesize endDate;
+@synthesize reportView;
+@synthesize frequency;
+@synthesize reportType;
+@synthesize reportGroup;
+
+
+
+- (void)unwindToReportDetail
+{
+//    reportView = reportViewTable;
+    [self performSegueWithIdentifier:@"segUnwindToReportDetail" sender:self];
+}
 
 - (void)viewDidLoad {
     [super viewDidLoad];

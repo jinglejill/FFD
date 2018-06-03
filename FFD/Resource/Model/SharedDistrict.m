@@ -9,5 +9,16 @@
 #import "SharedDistrict.h"
 
 @implementation SharedDistrict
+@synthesize districtList;
+
++(SharedDistrict *)sharedDistrict {
+    static dispatch_once_t pred;
+    static SharedDistrict *shared = nil;
+    dispatch_once(&pred, ^{
+        shared = [[SharedDistrict alloc] init];
+        shared.districtList = [[NSMutableArray alloc]init];
+    });
+    return shared;
+}
 
 @end

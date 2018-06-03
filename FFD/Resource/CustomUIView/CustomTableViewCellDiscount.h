@@ -1,5 +1,5 @@
 //
-//  CustomTableViewCellDiscount.h
+//  CustomTableViewCellLabelText.h
 //  FFD
 //
 //  Created by Thidaporn Kijkamjai on 9/27/2560 BE.
@@ -8,6 +8,8 @@
 
 #import <UIKit/UIKit.h>
 
-@interface CustomTableViewCellDiscount : UITableViewCell
+@interface CustomTableViewCellLabelText : UITableViewCell
+@property (strong, nonatomic) IBOutlet UILabel *lblTitle;
+@property (strong, nonatomic) IBOutlet UITextField *txtValue;
 
 @end

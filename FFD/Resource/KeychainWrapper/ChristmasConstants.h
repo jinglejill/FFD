@@ -13,6 +13,7 @@
 #define USERNAME @"brand"
 #define PASSWORD @"password"
 #define TOKEN @"deviceToken"
+#define BRANCH @"branch"
 
 // Used to specify the application used in accessing the Keychain.
 #define APP_NAME [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleIdentifier"]

@@ -9,5 +9,16 @@
 #import "SharedReceiptCustomerTable.h"
 
 @implementation SharedReceiptCustomerTable
+@synthesize receiptCustomerTableList;
+
++(SharedReceiptCustomerTable *)sharedReceiptCustomerTable {
+    static dispatch_once_t pred;
+    static SharedReceiptCustomerTable *shared = nil;
+    dispatch_once(&pred, ^{
+        shared = [[SharedReceiptCustomerTable alloc] init];
+        shared.receiptCustomerTableList = [[NSMutableArray alloc]init];
+    });
+    return shared;
+}
 
 @end

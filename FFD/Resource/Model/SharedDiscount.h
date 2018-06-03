@@ -9,5 +9,7 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedDiscount : NSObject
+@property (retain, nonatomic) NSMutableArray *discountList;
 
++ (SharedDiscount *)sharedDiscount;
 @end

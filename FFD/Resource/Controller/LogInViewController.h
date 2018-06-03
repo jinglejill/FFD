@@ -7,11 +7,20 @@
 //
 
 #import "CustomViewController.h"
+#import "CredentialsDb.h"
+
 
 @interface LogInViewController : CustomViewController<UITextFieldDelegate>
 @property (strong, nonatomic) IBOutlet UITextField *txtUsername;
 @property (strong, nonatomic) IBOutlet UITextField *txtPassword;
 @property (strong, nonatomic) IBOutlet UIButton *btnLogIn;
+@property (strong, nonatomic) IBOutlet UIImageView *imgLogo;
+@property (strong, nonatomic) IBOutlet UIButton *btnCheckBoxRememberMe;
+@property (strong, nonatomic) CredentialsDb *credentialsDb;
+
+
 - (IBAction)logIn:(id)sender;
+- (IBAction)checkBoxRememberMe:(id)sender;
+- (IBAction)rememberMe:(id)sender;
 - (IBAction)unwindToLogIn:(UIStoryboardSegue *)segue;
 @end

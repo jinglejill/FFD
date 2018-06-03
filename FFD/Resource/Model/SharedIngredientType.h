@@ -9,5 +9,7 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedIngredientType : NSObject
+@property (retain, nonatomic) NSMutableArray *ingredientTypeList;
 
++ (SharedIngredientType *)sharedIngredientType;
 @end

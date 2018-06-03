@@ -9,5 +9,7 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedMoneyCheck : NSObject
+@property (retain, nonatomic) NSMutableArray *moneyCheckList;
 
++ (SharedMoneyCheck *)sharedMoneyCheck;
 @end

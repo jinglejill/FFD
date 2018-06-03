@@ -9,5 +9,13 @@
 #import "CustomReportViewController.h"
 
 @interface ReportSalesByMenuTypeWeeklyTableViewController : CustomReportViewController
+@property (strong, nonatomic) IBOutlet UICollectionView *colVwData;
+@property (strong, nonatomic) IBOutlet UIButton *btnGraphView;
+@property (strong, nonatomic) IBOutlet UIButton *btnExportData;
+@property (strong, nonatomic) IBOutlet UIButton *btnPercent;
 
+
+- (IBAction)showGraphView:(id)sender;
+- (IBAction)exportData:(id)sender;
+- (IBAction)showPercent:(id)sender;
 @end

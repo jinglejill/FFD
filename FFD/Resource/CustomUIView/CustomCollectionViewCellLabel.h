@@ -8,6 +8,10 @@
 
 #import <UIKit/UIKit.h>
 
-@interface CustomCollectionViewCellLabel : CollectionViewCell
+@interface CustomCollectionViewCellLabel : UICollectionViewCell
 
+@property (strong, nonatomic) IBOutlet UILabel *lblTextLabel;
+@property (strong, nonatomic) IBOutlet UIView *vwTopBorder;
+@property (strong, nonatomic) IBOutlet UIView *vwRightBorder;
+@property (strong, nonatomic) IBOutlet UIView *vwLeftBorder;
 @end

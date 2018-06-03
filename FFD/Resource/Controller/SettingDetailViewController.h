@@ -7,7 +7,8 @@
 //
 
 #import "CustomViewController.h"
+#import "CustomSettingViewController.h"
 
-@interface SettingDetailViewController : CustomViewController
+@interface SettingDetailViewController : CustomSettingViewController
 
 @end

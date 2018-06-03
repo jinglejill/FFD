@@ -8,6 +8,11 @@
 
 #import "CustomViewController.h"
 
-@interface BranchSelectViewController : CustomViewController
-
+@interface BranchSelectViewController : CustomViewController<UIPickerViewDelegate,UIPickerViewDataSource,UITextFieldDelegate>
+@property (strong, nonatomic) IBOutlet UIProgressView *progressBar;
+@property (strong, nonatomic) IBOutlet UITextField *txtBranch;
+@property (strong, nonatomic) IBOutlet UIButton *btnOk;
+@property (strong, nonatomic) IBOutlet UIPickerView *pickerVw;
+@property (strong, nonatomic) NSMutableArray *credentialsDbList;
+- (IBAction)okAction:(id)sender;
 @end

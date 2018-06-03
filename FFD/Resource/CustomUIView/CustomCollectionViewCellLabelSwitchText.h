@@ -9,5 +9,9 @@
 #import <UIKit/UIKit.h>
 
 @interface CustomCollectionViewCellLabelSwitchText : UICollectionViewCell
-
+@property (strong, nonatomic) IBOutlet UISwitch *swtValue;
+@property (strong, nonatomic) IBOutlet UILabel *lblTextLabel;
+@property (strong, nonatomic) IBOutlet UITextField *txtTextValue;
+@property (strong, nonatomic) IBOutlet UIButton *btnTrash;
+@property (strong, nonatomic) IBOutlet NSLayoutConstraint *lblLeadingConstant;
 @end

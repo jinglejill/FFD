@@ -8,6 +8,7 @@
 
 #import <UIKit/UIKit.h>
 
-@interface CustomCollectionViewCellRemarkHeader : UICollectionViewCell
-
+@interface CustomCollectionViewCellRemarkHeader : UICollectionReusableView
+@property (strong, nonatomic) IBOutlet UILabel *lblDateTime;
+@property (strong, nonatomic) IBOutlet UILabel *lblRemark;
 @end

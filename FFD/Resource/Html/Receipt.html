@@ -1,0 +1,167 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<HTML>
+    <HEAD>
+        <style>
+            body {
+                font: normal 25px 'Helvetica', sans-serif,Verdana;
+            }
+        </style>
+        
+    </HEAD>
+    <BODY>
+        <table width="100%">
+            <tbody>
+                <tr>
+                    <td colspan=3 style="text-align: center;"><img height="250" src="http://jinglejill.com/ffd/MAMARIN4/image/mamarinReceiptLogo2.png"/> </td>
+                </tr>
+                <tr>
+                    <td colspan=3 height="10">&nbsp;</td>
+                </tr>
+                <tr>
+                    <td colspan=3 style="text-align: center;">ใบกำกับภาษี</td>
+                </tr>
+                <tr>
+                    <td colspan=3 style="text-align: center;"><strong>#COMPANY_NAME#</strong></td>
+                </tr>
+                <tr>
+                    <td style="text-align: center;" width="80px">&nbsp</td>
+                        <td style="text-align: center;">#COMPANY_ADDRESS#</td>
+                    <td style="text-align: center;" width="80px">&nbsp</td>
+                        </tr>
+                        <tr>
+                        <td colspan=3 style="text-align: center;">โทร. #PHONE_NO#</td>
+                </tr>
+                <tr>
+                    <td colspan=3 style="text-align: center;">TAX ID:&nbsp#TAX_ID#</td>
+                        </tr>
+                        <tr>
+                        <td colspan=3 height="10">&nbsp;</td>
+                </tr>
+                <tr>
+                    <td colspan=3 height="10">&nbsp;</td>
+                </tr>
+            </tbody>
+        </table>
+        <table width="100%">
+            <tbody>
+                <tr>
+                    <td style="border: 1px solid black; padding: 10px; border-radius: 15px;">
+                        <table width="100%">
+                            <tbody>
+                                <tr>
+                                    <td colspan=2><strong>นามลูกค้า:</strong>&nbsp;#CUSTOMER_NAME#</td>
+                                </tr>
+                                <tr>
+                                    <td colspan=2><strong>ที่อยู่:</strong>&nbsp;#CUSTOMER_ADDRESS#</td>
+                                </tr>
+                                <tr>
+                                    <td colspan=2><strong>เบอร์โทร.:</strong>&nbsp;#CUSTOMER_PHONE_NO#</td>
+                                </tr>
+                                <tr>
+                                    <td colspan=2><strong>เลขประจำตัวผู้เสียภาษี:</strong>&nbsp;#CUSTOMER_TAX_ID#</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <table width="100%">
+            <tbody>
+                <tr>
+                    <td colspan=2 height="10">&nbsp;</td>
+                </tr>
+                <tr>
+                    <td style="text-align: left;">เลขที่ #RECEIPT_NO#</td>
+                    <td style="text-align: right;">วันที่ #RECEIPT_TIME#</td>
+                </tr>
+            </tbody>
+        </table>
+        <table width="100%" style="border-collapse:collapse;">
+            <tbody>
+                <tr>
+                    <td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000;">รายการ</td>
+                    <td style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; text-align: right;" width="100">ราคา</td>
+                </tr>
+                <tr>
+                    <td style="vertical-align: text-top;border-bottom: 1px solid #000000;">อาหารและเครื่องดื่ม</td>
+                    <td style="text-align: right;vertical-align: text-top;border-bottom: 1px solid #000000;">#TOTAL_PRICE_PER_ITEM#</td>
+                </tr>
+            </tbody>
+        </table>
+        <table width="100%" style="border-collapse:collapse;">
+            <tbody>
+                <tr style="display:none">
+                    <td style="border-top: 1px solid #000000;">จำนวนรวม:&nbsp;#TOTAL_QUANTITY#</td>
+                    <td style="border-top: 1px solid #000000; text-align: right;">#SUB_TOTAL_AMOUNT#</td>
+                </tr>
+                <tr #HIDE#>
+                    <td>ส่วนลด</td>
+                    <td style="text-align: right;">#DISCOUNT_AMOUNT#</td>
+                </tr>
+                <tr #HIDE#>
+                    <td>คงเหลือ</td>
+                    <td style="text-align: right;">#AFTER_DISCOUNT_AMOUNT#</td>
+                </tr>
+                <tr style="display:none">
+                    <td>ค่าบริการ 10%</td>
+                    <td style="text-align: right;">#SERVICE_CHARGE_AMOUNT#</td>
+                </tr>
+                <tr>
+                    <td>ภาษีมูลค่าเพิ่ม 7%</td>
+                    <td style="text-align: right;">#VAT_AMOUNT#</td>
+                </tr>
+                <tr>
+                    <td>ปัดเศษ</td>
+                    <td style="text-align: right;">#ROUNDING_AMOUNT#</td>
+                </tr>
+                <tr>
+                    <td>รวมชำระ</td>
+                    <td style="text-align: right;"><strong>#TOTAL_AMOUNT#</strong></td>
+                </tr>
+                #PAY_BY_CARD#
+                #PAY_BY_CASH#
+                <tr>
+                    <td style="border-top: 1px solid #000000;">&nbsp</td>
+                        <td style="border-top: 1px solid #000000;text-align: right;"></td>
+                </tr>
+                <tr style="display:none">
+                    <td style="border-top: 1px solid #000000;">รหัสสมาชิก</td>
+                    <td style="border-top: 1px solid #000000;text-align: right;">#MEMBER_CODE#</td>
+                </tr>
+                <tr style="display:none">
+                    <td>แต้มสะสม</td>
+                    <td style="text-align: right;">#TOTAL_POINT#</td>
+                </tr>
+            </tbody>
+        </table>
+        <table width="100%">
+            <tbody>
+                <tr>
+                    <td height="5">&nbsp;</td>
+                </tr>
+                <tr>
+                    <td height="5">&nbsp;</td>
+                </tr>
+                <tr>
+                    <td width="1%" white-space:nowrap;>ลายเซ็นต์:________________</td>
+                </tr>
+            </tbody>
+        </table>
+        <table width="100%">
+            <tbody>
+                <tr>
+                    <td height="5">&nbsp;</td>
+                </tr>
+                <tr>
+                    <td style="text-align: center;">#THANK_YOU#</td>
+                </tr>
+            </tbody>
+        </table>
+        
+    </BODY>
+</HTML>
+
+
+

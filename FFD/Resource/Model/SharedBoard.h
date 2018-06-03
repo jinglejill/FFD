@@ -9,5 +9,7 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedBoard : NSObject
+@property (retain, nonatomic) NSMutableArray *boardList;
 
++ (SharedBoard *)sharedBoard;
 @end

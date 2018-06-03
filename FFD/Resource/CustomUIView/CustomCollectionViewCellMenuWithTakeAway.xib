@@ -15,13 +15,17 @@
             <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="NmJ-bs-lbD">
+                    <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                    <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                </view>
                 <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="1lF-CM-LXD">
                     <rect key="frame" x="329" y="318" width="30" height="30"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="30" id="Mpf-Z4-Wsm"/>
                         <constraint firstAttribute="height" constant="30" id="twp-I4-gqh"/>
                     </constraints>
-                    <state key="normal" image="Take away.png"/>
+                    <state key="normal" image="take away2.png"/>
                 </button>
                 <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="3Y4-Ff-rZT">
                     <rect key="frame" x="16" y="318" width="305" height="30"/>
@@ -29,36 +33,54 @@
                         <constraint firstAttribute="height" constant="30" id="itk-03-IOU"/>
                     </constraints>
                     <state key="normal" title="เล็กน้ำธรรมดา">
-                        <color key="titleColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
+                        <color key="titleColor" white="0.0" alpha="1" colorSpace="calibratedWhite"/>
                     </state>
                 </button>
                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="stI-yN-PCw">
                     <rect key="frame" x="16" y="666" width="343" height="1"/>
-                    <color key="backgroundColor" red="0.80000000000000004" green="0.80000000000000004" blue="0.80000000000000004" alpha="1" colorSpace="calibratedRGB"/>
+                    <color key="backgroundColor" red="0.8784313725490196" green="0.8784313725490196" blue="0.8784313725490196" alpha="1" colorSpace="calibratedRGB"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="UaD-gi-wYr"/>
                     </constraints>
                 </view>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="lrb-V3-Eh0">
+                    <rect key="frame" x="374" y="0.0" width="1" height="667"/>
+                    <color key="backgroundColor" red="0.87843137250000003" green="0.87843137250000003" blue="0.87843137250000003" alpha="1" colorSpace="calibratedRGB"/>
+                    <constraints>
+                        <constraint firstAttribute="width" constant="1" id="19C-Lg-RJ0"/>
+                    </constraints>
+                </view>
             </subviews>
-            <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color key="backgroundColor" red="1" green="0.29060374149659862" blue="0.99999129772186279" alpha="1" colorSpace="calibratedRGB"/>
+            <gestureRecognizers/>
             <constraints>
+                <constraint firstItem="lrb-V3-Eh0" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" id="2Q8-05-9VL"/>
+                <constraint firstAttribute="bottom" secondItem="lrb-V3-Eh0" secondAttribute="bottom" id="5tN-Sq-ZLo"/>
                 <constraint firstItem="3Y4-Ff-rZT" firstAttribute="centerY" secondItem="iN0-l3-epB" secondAttribute="centerY" id="Bdo-te-qYA"/>
+                <constraint firstAttribute="trailing" secondItem="NmJ-bs-lbD" secondAttribute="trailing" id="GQG-AD-iou"/>
                 <constraint firstAttribute="trailing" secondItem="1lF-CM-LXD" secondAttribute="trailing" constant="16" id="Mp9-JJ-6RX"/>
                 <constraint firstItem="1lF-CM-LXD" firstAttribute="leading" secondItem="3Y4-Ff-rZT" secondAttribute="trailing" constant="8" id="QMj-59-cpw"/>
+                <constraint firstAttribute="bottom" secondItem="NmJ-bs-lbD" secondAttribute="bottom" id="RHW-Fz-m9F"/>
+                <constraint firstItem="NmJ-bs-lbD" firstAttribute="centerY" secondItem="iN0-l3-epB" secondAttribute="centerY" id="X12-Qa-nX5"/>
                 <constraint firstItem="stI-yN-PCw" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" constant="16" id="d8O-9i-gj3"/>
+                <constraint firstItem="NmJ-bs-lbD" firstAttribute="centerX" secondItem="iN0-l3-epB" secondAttribute="centerX" id="iAy-PW-mkc"/>
+                <constraint firstItem="NmJ-bs-lbD" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" id="jPi-2i-LHf"/>
                 <constraint firstItem="1lF-CM-LXD" firstAttribute="centerY" secondItem="iN0-l3-epB" secondAttribute="centerY" id="qVf-l0-6A6"/>
                 <constraint firstAttribute="bottom" secondItem="stI-yN-PCw" secondAttribute="bottom" id="uCe-Ct-aMb"/>
+                <constraint firstAttribute="trailing" secondItem="lrb-V3-Eh0" secondAttribute="trailing" id="v7r-ox-IQh"/>
+                <constraint firstItem="NmJ-bs-lbD" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" id="yWe-37-1sN"/>
                 <constraint firstAttribute="trailing" secondItem="stI-yN-PCw" secondAttribute="trailing" constant="16" id="zoZ-G4-QDb"/>
                 <constraint firstItem="3Y4-Ff-rZT" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" constant="16" id="zyO-xC-bQQ"/>
             </constraints>
             <connections>
                 <outlet property="btnMenuName" destination="3Y4-Ff-rZT" id="afk-cv-xl2"/>
                 <outlet property="btnTakeAway" destination="1lF-CM-LXD" id="8eP-im-Hxq"/>
+                <outlet property="vwRoundedCorner" destination="NmJ-bs-lbD" id="FEU-Zp-0gs"/>
             </connections>
             <point key="canvasLocation" x="79.5" y="54.5"/>
         </view>
     </objects>
     <resources>
-        <image name="Take away.png" width="30" height="30"/>
+        <image name="take away2.png" width="30" height="30"/>
     </resources>
 </document>

@@ -7,7 +7,10 @@
 //
 
 #import "CustomViewController.h"
+#import "SetUpPrinterViewController.h"
 
-@interface SelectPrinterViewController : CustomViewController
+@interface SelectPrinterViewController : CustomViewController<UITableViewDelegate,UITableViewDataSource>
+@property (strong, nonatomic) SetUpPrinterViewController *vc;
+@property (strong, nonatomic) IBOutlet UITableView *tbvSelectPrinter;
 
 @end

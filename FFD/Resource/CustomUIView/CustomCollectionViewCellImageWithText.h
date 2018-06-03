@@ -10,4 +10,6 @@
 
 @interface CustomCollectionViewCellImageWithText : UICollectionViewCell
 
+@property (strong, nonatomic) IBOutlet UIImageView *imgVwIcon;
+@property (strong, nonatomic) IBOutlet UILabel *lblMenuName;
 @end

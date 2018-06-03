@@ -9,11 +9,17 @@
 #import "CustomerTableViewController.h"
 #import "OrderTakingViewController.h"
 #import "ReceiptViewController.h"
+#import "MoneyCheckCloseViewController.h"
+#import "CustomerKitchenViewController.h"
 #import "CustomCollectionViewCellCustomerTable.h"
 #import "UserAccount.h"
 #import "CustomerTable.h"
 #import "TableTaking.h"
 #import "OrderTaking.h"
+#import "RoleTabMenu.h"
+#import "Board.h"
+#import "Receipt.h"
+#import "Setting.h"
 
 
 @interface CustomerTableViewController ()
@@ -21,27 +27,138 @@
     NSIndexPath *_selectedIndexPath;
     CustomerTable *_customerTable;
     NSMutableArray *_customerTableList;
+    NSString *_previousTypeAndZone;
 }
 @end
 
 @implementation CustomerTableViewController
 static NSString * const reuseIdentifier = @"CustomCollectionViewCellCustomerTable";
-static NSString * const reuseHeaderViewIdentifier = @"HeaderView";
-static NSString * const reuseFooterViewIdentifier = @"FooterView";
 
 
 @synthesize colVwCustomerTable;
 @synthesize lblHello;
 @synthesize btnLogOut;
-@synthesize btnEatIn;
-@synthesize btnTakeAway;
-@synthesize btnDelivery;
-
+@synthesize imgLogo;
+@synthesize btnReceiptHistory;
+@synthesize txvBoard;
+@synthesize btnEditBoard;
+@synthesize btnConfirm;
+@synthesize btnCancel;
+@synthesize btnCheckMoney;
+@synthesize lblOrderPushCount;
+@synthesize credentialsDb;
 
 
 - (IBAction)unwindToCustomerTable:(UIStoryboardSegue *)segue
 {
     [self loadViewProcess];
+    [self setCurrentVc];
+}
+
+- (IBAction)viewReceiptHistory:(id)sender
+{
+    [self performSegueWithIdentifier:@"segReceiptHistory" sender:self];
+}
+
+- (IBAction)confirmEditBoard:(id)sender
+{
+    Board *board = [Board getBoard:1];
+    board.content = [Utility replaceNewLineForDB:txvBoard.text];
+    board.modifiedUser = [Utility modifiedUser];
+    board.modifiedDate = [Utility currentDateTime];
+    [self.homeModel updateItems:dbBoard withData:board actionScreen:@"update board content in customerTable screen"];
+    
+    txvBoard.editable = NO;
+    btnEditBoard.hidden = NO;
+    btnConfirm.hidden = YES;
+    btnCancel.hidden = YES;
+}
+
+- (IBAction)cancelEditBoard:(id)sender
+{
+    Board *board = [Board getBoard:1];
+    txvBoard.text = [Utility replaceNewLineForApp:board.content];
+    txvBoard.editable = NO;
+    btnEditBoard.hidden = NO;
+    btnConfirm.hidden = YES;
+    btnCancel.hidden = YES;
+}
+
+- (IBAction)editBoard:(id)sender
+{
+    txvBoard.editable = YES;
+    btnEditBoard.hidden = YES;
+    btnConfirm.hidden = NO;
+    btnCancel.hidden = NO;
+}
+
+- (IBAction)checkMoney:(id)sender
+{
+    UIButton *button = sender;
+    UIAlertController* alert = [UIAlertController alertControllerWithTitle:nil
+                                                                   message:nil
+                                                            preferredStyle:UIAlertControllerStyleActionSheet];
+    [alert addAction:
+     [UIAlertAction actionWithTitle:@"เริ่มต้นกะ"
+                              style:UIAlertActionStyleDefault handler:^(UIAlertAction *action)
+      {
+          //จะแสดงปุ่มเริ่มต้นกะ โดยเริ่มจากเวลา เริ่มต้นกะ-30นาที จนถึงเวลาปิดกะ
+          if([self inPeriod:1] || [self inPeriod:2] || [self inPeriod:3])
+          {
+              NSInteger period = [self inPeriod:1]?1:[self inPeriod:2]?2:[self inPeriod:3]?3:0;
+              [self checkMoneyClose:period type:1];
+          }
+          else
+          {
+              [self showAlert:@"" message:@"ไม่สามารถตรวจสอบเงินเริ่มต้นกะได้ตอนนี้\n ตรวจสอบได้ก่อนเริ่มเปิดกะ 30 นาที"];
+          }
+      }]];
+    
+    [alert addAction:
+     [UIAlertAction actionWithTitle:@"สิ้นสุดกะ"
+                              style:UIAlertActionStyleDefault handler:^(UIAlertAction *action)
+      {
+          NSInteger period = [self inPeriod:1]?1:[self inPeriod:2]?2:[self inPeriod:3]?3:0;
+          [self checkMoneyClose:period type:0];
+      }]];
+    
+    if ( UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad )
+    {
+        [alert setModalPresentationStyle:UIModalPresentationPopover];
+        
+        UIPopoverPresentationController *popPresenter = [alert popoverPresentationController];
+        CGRect frame = button.bounds;
+        frame.origin.y = frame.origin.y-15;
+        popPresenter.sourceView = button;
+        popPresenter.sourceRect = frame;
+    }
+    
+    [self presentViewController:alert animated:YES completion:nil];
+}
+
+- (IBAction)viewOrderPush:(id)sender
+{
+    [self performSegueWithIdentifier:@"segCustomerKitchen" sender:self];
+}
+
+-(void)viewDidLayoutSubviews
+{
+    [super viewDidLayoutSubviews];
+ 
+    CGRect frame = imgLogo.frame;
+    frame.size.width = frame.size.height*imgLogo.image.size.width/imgLogo.image.size.height;
+    imgLogo.frame = frame;
+    
+    
+    {
+        NSInteger collectionViewOriginY = 86;
+        NSInteger ipadTabBarHeight = 56;
+        NSInteger confirmCancelHeight = 46;
+        
+        CGRect frame = colVwCustomerTable.frame;
+        frame.size.height = self.view.frame.size.height-collectionViewOriginY-ipadTabBarHeight-confirmCancelHeight;
+        colVwCustomerTable.frame = frame;
+    }
 }
 
 - (void)loadView
@@ -49,15 +166,16 @@ static NSString * const reuseFooterViewIdentifier = @"FooterView";
     [super loadView];
     
 
+    [self setCurrentVc];
     UserAccount *userAccount = [UserAccount getCurrentUserAccount];
     lblHello.text = [NSString stringWithFormat:@"สวัสดี คุณ%@",[UserAccount getFirstNameWithFullName:userAccount.fullName]];
     lblHello.textColor = mDarkGrayColor;
+    _previousTypeAndZone = @"";
     
     
-    [self setCornerAndShadow:btnLogOut];
-    [self setCornerAndShadow:btnEatIn];
-    [self setCornerAndShadow:btnTakeAway];
-    [self setCornerAndShadow:btnDelivery];
+    [self setButtonDesign:btnLogOut];
+    [self setButtonDesign:btnReceiptHistory];
+    [self setButtonDesign:btnCheckMoney];
     
     
     [self loadViewProcess];
@@ -67,45 +185,110 @@ static NSString * const reuseFooterViewIdentifier = @"FooterView";
 {
     _customerTableList = [CustomerTable getCustomerTableListWithStatus:1];
     [colVwCustomerTable reloadData];
+    
+    
+    txvBoard.text = [Utility replaceNewLineForApp:[Board getContent]];
+    
+    
+    
+    //tab setting
+    UserAccount *currentUserAccount = [UserAccount getCurrentUserAccount];
+    NSMutableArray *roleTabMenuList = [RoleTabMenu getRoleTabMenuListWithRoleID:currentUserAccount.roleID tabMenuType:1];
+    NSMutableArray *showVCList = [[NSMutableArray alloc]init];
+    for(RoleTabMenu *item in roleTabMenuList)
+    {
+        [showVCList addObject:self.tabBarController.viewControllers[item.tabMenuID-1]];
+    }
+    [self.tabBarController setViewControllers:showVCList animated:YES];
+    
+    
+    
+    //board setting
+    RoleTabMenu *roleTabMenu = [RoleTabMenu getRoleTabMenuWithRoleID:currentUserAccount.roleID tabMenuID:14];
+    if(roleTabMenu)
+    {
+        txvBoard.editable = NO;
+        btnEditBoard.hidden = NO;
+        btnConfirm.hidden = YES;
+        btnCancel.hidden = YES;
+    }
+    else
+    {
+        txvBoard.editable = NO;
+        btnEditBoard.hidden = YES;
+        btnConfirm.hidden = YES;
+        btnCancel.hidden = YES;
+    }
+    
+    
+    
+    //check money setting
+    {
+        RoleTabMenu *roleTabMenuCheckMoneyShopOpen = [RoleTabMenu getRoleTabMenuWithRoleID:currentUserAccount.roleID tabMenuID:12];
+        RoleTabMenu *roleTabMenuCheckMoneyShopClose = [RoleTabMenu getRoleTabMenuWithRoleID:currentUserAccount.roleID tabMenuID:13];
+        btnCheckMoney.hidden = !roleTabMenuCheckMoneyShopOpen && !roleTabMenuCheckMoneyShopClose;
+    }
+    
+    
+    
+    //customer orderPushCount
+    NSMutableArray *receiptActionList = [Receipt getReceiptListWithStatus:2 branchID:credentialsDb.branchID];
+    [receiptActionList addObjectsFromArray:[Receipt getReceiptListWithStatus:5 branchID:credentialsDb.branchID]];
+    [receiptActionList addObjectsFromArray:[Receipt getReceiptListWithStatus:7 branchID:credentialsDb.branchID]];
+    [receiptActionList addObjectsFromArray:[Receipt getReceiptListWithStatus:8 branchID:credentialsDb.branchID]];
+    [receiptActionList addObjectsFromArray:[Receipt getReceiptListWithStatus:11 branchID:credentialsDb.branchID]];
+    lblOrderPushCount.text = [receiptActionList count]==0?@"":@"!";
+
+    
+//    NSMutableArray *receiptList = [Receipt getReceiptListWithStatus:2 branchID:credentialsDb.branchID];
+//    NSInteger countReceipt = [receiptList count];
+//    lblOrderPushCount.text = [Utility formatDecimal:countReceipt withMinFraction:0 andMaxFraction:0];
+    
 }
 
-- (void)viewDidLoad {
+- (void)viewDidLoad
+{
     [super viewDidLoad];
     
     UINib *nib = [UINib nibWithNibName:reuseIdentifier bundle:nil];
     [colVwCustomerTable registerNib:nib forCellWithReuseIdentifier:reuseIdentifier];
     
     
+    
     // Register cell classes
-    [colVwCustomerTable registerClass:[UICollectionReusableView class] forSupplementaryViewOfKind:UICollectionElementKindSectionHeader withReuseIdentifier:reuseHeaderViewIdentifier];
-    [colVwCustomerTable registerClass:[UICollectionReusableView class] forSupplementaryViewOfKind:UICollectionElementKindSectionFooter withReuseIdentifier:reuseFooterViewIdentifier];
     colVwCustomerTable.delegate = self;
     colVwCustomerTable.dataSource = self;
+    
+    
+
+    
+    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self.view action:@selector(endEditing:)];
+    [self.view addGestureRecognizer:tapGesture];
+    [tapGesture setCancelsTouchesInView:NO];
 }
 
 - (IBAction)logOut:(id)sender
 {
+    UserAccount *userAccount = [UserAccount getCurrentUserAccount];
+    userAccount.deviceToken = @"";
+    userAccount.modifiedUser = [Utility modifiedUser];
+    userAccount.modifiedDate = [Utility currentDateTime];
+    [self.homeModel updateItems:dbUserAccount withData:userAccount actionScreen:@"log out in customerTable screen"];
+    
+    
     [UserAccount setCurrentUserAccount:nil];
     [self performSegueWithIdentifier:@"segUnwindToLogIn" sender:self];
-}
-
-- (IBAction)eatIn:(id)sender {
-}
-
-- (IBAction)takeAway:(id)sender {
-}
-
-- (IBAction)delivery:(id)sender {
 }
 
 #pragma mark <UICollectionViewDataSource>
 
 - (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView {
-    return  1;
+    return  [_customerTableList count]>0;
 }
 
 
-- (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
+- (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section
+{
     return [_customerTableList count];
 }
 
@@ -113,34 +296,62 @@ static NSString * const reuseFooterViewIdentifier = @"FooterView";
     
     CustomCollectionViewCellCustomerTable *cell = [collectionView dequeueReusableCellWithReuseIdentifier:reuseIdentifier forIndexPath:indexPath];
     
+    
     NSInteger item = indexPath.item;
     
 
-    [self setCornerAndShadow:cell radius:8];
-    cell.backgroundColor = mLightBlueColor;
-    
+    [self setCornerAndShadow:cell cornerRadius:8];
+
     
     CustomerTable *customerTable = _customerTableList[item];
-    NSString *tableName = customerTable.tableName;
-    cell.lblTableName.text = tableName;
+    NSString *currentTypeAndZone = [NSString stringWithFormat:@"%ld,%@",customerTable.type,customerTable.zone];
+    if(![_previousTypeAndZone isEqualToString:currentTypeAndZone])
+    {
+        UIFont *font = [UIFont boldSystemFontOfSize:25];
+        NSDictionary *attribute = @{NSFontAttributeName: font};
+        NSMutableAttributedString *attrString = [[NSMutableAttributedString alloc] initWithString:[Utility getFirstLetter:customerTable.tableName] attributes:attribute];
+        
+        
+        UIFont *font2 = [UIFont systemFontOfSize:17];
+        NSDictionary *attribute2 = @{NSFontAttributeName: font2};
+        NSMutableAttributedString *attrString2 = [[NSMutableAttributedString alloc] initWithString:[Utility getTextOmitFirstLetter:customerTable.tableName] attributes:attribute2];
+        
+        
+        [attrString appendAttributedString:attrString2];
+        cell.lblTableName.attributedText = attrString;
+
+    }
+    else
+    {
+        NSString *tableName = customerTable.tableName;
+        cell.lblTableName.text = tableName;
+    }
+    _previousTypeAndZone = currentTypeAndZone;
     
     
     //check occupy status
-    TableTaking *tableTaking = [TableTaking getTableTakingWithCustomerTableID:customerTable.customerTableID status:1];
+    TableTaking *tableTaking = [TableTaking getTableTakingWithCustomerTableID:customerTable.customerTableID receiptID:0];
     NSMutableArray *orderTakingStatus1List = [OrderTaking getOrderTakingListWithCustomerTableID:customerTable.customerTableID status:1];
-    NSMutableArray *orderTakingStatus2List = [OrderTaking getOrderTakingListWithCustomerTableID:customerTable.customerTableID status:2];
+    NSMutableArray *orderTakingStatus2And3List = [OrderTaking getOrderTakingListWithCustomerTableID:customerTable.customerTableID statusList:@[@2,@3]];
+    Receipt *receipt = [Receipt getReceiptWithCustomerTableID:customerTable.customerTableID status:1];
     
-    if([orderTakingStatus1List count] > 0)
-    {
-        //show image take order
-        cell.imgVwOccupying.hidden = NO;
-        cell.imgVwOccupying.image = [UIImage imageNamed:@"Add note dark blue.png"];
-    }
-    else if([orderTakingStatus2List count] > 0)
+    if(receipt)
     {
         //show image spoon and fork
         cell.imgVwOccupying.hidden = NO;
         cell.imgVwOccupying.image = [UIImage imageNamed:@"Table reserve.png"];
+    }
+    else if([orderTakingStatus2And3List count] > 0)
+    {
+        //show image spoon and fork
+        cell.imgVwOccupying.hidden = NO;
+        cell.imgVwOccupying.image = [UIImage imageNamed:@"Table reserve.png"];
+    }
+    else if([orderTakingStatus1List count] > 0)
+    {
+        //show image take order
+        cell.imgVwOccupying.hidden = NO;
+        cell.imgVwOccupying.image = [UIImage imageNamed:@"Add note dark blue.png"];
     }
     else if(tableTaking)
     {
@@ -148,6 +359,7 @@ static NSString * const reuseFooterViewIdentifier = @"FooterView";
         cell.imgVwOccupying.hidden = NO;
         cell.imgVwOccupying.image = [UIImage imageNamed:@"Add note dark blue.png"];
     }
+    
     else
     {
         //not show image
@@ -162,15 +374,19 @@ static NSString * const reuseFooterViewIdentifier = @"FooterView";
     cell.vwTopBorder.backgroundColor = [UIColor clearColor];
     cell.vwBottomBorder.backgroundColor = [UIColor clearColor];
     
+    
+    
     if([indexPath isEqual:_selectedIndexPath])
     {
-        cell.backgroundColor = mBlueColor;
+        UIColor *color = UIColorFromRGB([Utility hexStringToInt:customerTable.color]);
+        cell.backgroundColor = color;
         cell.lblTableName.textColor = [UIColor whiteColor];
         
     }
     else
     {
-        cell.backgroundColor = mLightBlueColor;
+        UIColor *color = UIColorFromRGB([Utility hexStringToInt:customerTable.color]);
+        cell.backgroundColor = [color colorWithAlphaComponent:0.2];
         cell.lblTableName.textColor = mDarkGrayColor;
     }
     
@@ -184,27 +400,41 @@ static NSString * const reuseFooterViewIdentifier = @"FooterView";
 
     
     CustomCollectionViewCellCustomerTable* cell = (CustomCollectionViewCellCustomerTable *)[collectionView cellForItemAtIndexPath:indexPath];
-    cell.backgroundColor = mBlueColor;
+    
+
+    NSInteger item = indexPath.item;
+    CustomerTable *customerTable = _customerTableList[item];
+    
+    
+    TableTaking *tableTaking = [TableTaking getTableTakingWithCustomerTableID:customerTable.customerTableID receiptID:0];
+    NSMutableArray *orderTakingStatus1List = [OrderTaking getOrderTakingListWithCustomerTableID:customerTable.customerTableID status:1];
+    NSMutableArray *orderTakingStatus2And3List = [OrderTaking getOrderTakingListWithCustomerTableID:customerTable.customerTableID statusList:@[@2,@3]];
+    Receipt *receipt = [Receipt getReceiptWithCustomerTableID:customerTable.customerTableID status:1];
+    _customerTable = customerTable;
+    
+    
+    
+    
+    UIColor *color = UIColorFromRGB([Utility hexStringToInt:customerTable.color]);
+    cell.backgroundColor = color;
     cell.lblTableName.textColor = [UIColor whiteColor];
     
     
     
-    CustomerTable *customerTable = _customerTableList[indexPath.item];
-    TableTaking *tableTaking = [TableTaking getTableTakingWithCustomerTableID:customerTable.customerTableID status:1];
-    NSMutableArray *orderTakingStatus1List = [OrderTaking getOrderTakingListWithCustomerTableID:customerTable.customerTableID status:1];
-    NSMutableArray *orderTakingStatus2List = [OrderTaking getOrderTakingListWithCustomerTableID:customerTable.customerTableID status:2];
-    
-    
-    _customerTable = customerTable;
-    if([orderTakingStatus1List count] > 0)
-    {
-        //show image take order
-        [self performSegueWithIdentifier:@"segOrderTaking" sender:self];
-    }
-    else if([orderTakingStatus2List count] > 0)
+    if(receipt)
     {
         //show image spoon and fork
         [self performSegueWithIdentifier:@"segReceipt" sender:self];
+    }
+    else if([orderTakingStatus2And3List count] > 0)
+    {
+        //show image spoon and fork
+        [self performSegueWithIdentifier:@"segReceipt" sender:self];
+    }
+    else if([orderTakingStatus1List count] > 0)
+    {
+        //show image take order
+        [self performSegueWithIdentifier:@"segOrderTaking" sender:self];
     }
     else if(tableTaking)
     {
@@ -222,7 +452,13 @@ static NSString * const reuseFooterViewIdentifier = @"FooterView";
 {
     CustomCollectionViewCellCustomerTable* cell = (CustomCollectionViewCellCustomerTable *)[collectionView cellForItemAtIndexPath:indexPath];
 
-    cell.backgroundColor = mLightBlueColor;
+    
+    NSInteger item = indexPath.item;
+    CustomerTable *customerTable = _customerTableList[item];
+    
+    
+    UIColor *color = UIColorFromRGB([Utility hexStringToInt:customerTable.color]);
+    cell.backgroundColor = [color colorWithAlphaComponent:0.2];
     cell.lblTableName.textColor = mDarkGrayColor;
 }
 
@@ -238,18 +474,22 @@ static NSString * const reuseFooterViewIdentifier = @"FooterView";
         ReceiptViewController *vc = segue.destinationViewController;
         vc.customerTable = _customerTable;
     }
+    else if([segue.identifier isEqualToString:@"segCustomerKitchen"])
+    {
+        CustomerKitchenViewController *vc = segue.destinationViewController;
+        vc.credentialsDb = credentialsDb;
+    }
 }
 
 #pragma mark <UICollectionViewDelegate>
 
 
-- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
-    
+- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath
+{
     float column = 10;
     NSInteger row = ceil([_customerTableList count]/column);
-    NSInteger collectionViewOriginY = 86;
-    NSInteger ipadTabBarHeight = 56;
-    CGSize size = CGSizeMake((self.view.frame.size.width)/column-5, (self.view.frame.size.height-collectionViewOriginY-ipadTabBarHeight-1)/row-5);
+    CGSize size = CGSizeMake((collectionView.frame.size.width)/column-5, (collectionView.frame.size.height)/row-5);
+
     return size;
 }
 
@@ -263,7 +503,8 @@ static NSString * const reuseFooterViewIdentifier = @"FooterView";
 }
 
 - (UIEdgeInsets)collectionView:
-(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout insetForSectionAtIndex:(NSInteger)section {
+(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout insetForSectionAtIndex:(NSInteger)section
+{
     return UIEdgeInsetsMake(0, 0, 0, 5);//top, left, bottom, right
 }
 
@@ -304,5 +545,41 @@ minimumInteritemSpacingForSectionAtIndex:(NSInteger)section
 {
     CGSize headerSize = CGSizeMake(collectionView.bounds.size.width, 0);
     return headerSize;
+}
+
+-(void)checkMoneyClose:(NSInteger)period type:(NSInteger)type
+{
+    UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"Main" bundle:nil];
+    MoneyCheckCloseViewController *controller = [storyboard instantiateViewControllerWithIdentifier:@"MoneyCheckCloseViewController"];
+    controller.preferredContentSize = CGSizeMake(500, 44*5+58);//type == 0?CGSizeMake(500, 44*5+58):CGSizeMake(500, 44*3+58);
+    controller.period = period;
+    controller.type = type;
+    
+    
+    // present the controller
+    // on iPad, this will be a Popover
+    // on iPhone, this will be an action sheet
+    controller.modalPresentationStyle = UIModalPresentationFormSheet;
+    [self presentViewController:controller animated:YES completion:nil];
+    
+    // configure the Popover presentation controller
+    UIPopoverPresentationController *popController = [controller popoverPresentationController];
+    popController.permittedArrowDirections = UIPopoverArrowDirectionAny;
+    popController.delegate = self;
+    
+    
+    
+    CGRect frame = btnCheckMoney.frame;
+    frame.origin.y = frame.origin.y-15;
+    popController.sourceView = btnCheckMoney;
+    popController.sourceRect = frame;
+}
+
+- (BOOL)popoverPresentationControllerShouldDismissPopover:(UIPopoverPresentationController *)popoverPresentationController
+{
+    
+    // return YES if the Popover should be dismissed
+    // return NO if the Popover should not be dismissed
+    return YES;
 }
 @end

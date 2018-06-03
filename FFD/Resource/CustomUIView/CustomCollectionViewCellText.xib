@@ -1,16 +1,76 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="11134" systemVersion="15F34" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES">
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="13771" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES">
+    <device id="retina4_7" orientation="portrait">
+        <adaptation id="fullscreen"/>
+    </device>
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="11106"/>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="13772"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
-        <view contentMode="scaleToFill" id="iN0-l3-epB">
+        <view contentMode="scaleToFill" id="iN0-l3-epB" customClass="CustomCollectionViewCellText">
             <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            <subviews>
+                <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="line" textAlignment="right" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="fFx-TB-i73">
+                    <rect key="frame" x="42" y="318" width="291" height="30"/>
+                    <color key="backgroundColor" red="0.80000001190000003" green="0.80000001190000003" blue="0.80000001190000003" alpha="1" colorSpace="calibratedRGB"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="30" id="hGe-FL-gCT"/>
+                        <constraint firstAttribute="width" constant="291" id="m3f-Xb-KYs"/>
+                    </constraints>
+                    <nil key="textColor"/>
+                    <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                    <textInputTraits key="textInputTraits" keyboardType="decimalPad"/>
+                </textField>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="zNc-yq-YXg">
+                    <rect key="frame" x="0.0" y="0.0" width="1" height="667"/>
+                    <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                    <constraints>
+                        <constraint firstAttribute="width" constant="1" id="c79-K1-dUE"/>
+                    </constraints>
+                </view>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="OoP-1x-YP5">
+                    <rect key="frame" x="374" y="0.0" width="1" height="667"/>
+                    <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                    <constraints>
+                        <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="1" id="Ec2-sx-EhK"/>
+                        <constraint firstAttribute="width" constant="1" id="FvV-ab-AJ9"/>
+                    </constraints>
+                </view>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="WkA-Pr-5Wx">
+                    <rect key="frame" x="0.0" y="0.0" width="375" height="1"/>
+                    <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="1" id="2bc-UR-WFB"/>
+                    </constraints>
+                </view>
+            </subviews>
             <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <constraints>
+                <constraint firstItem="zNc-yq-YXg" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" id="0TV-XO-O4x"/>
+                <constraint firstAttribute="bottom" secondItem="zNc-yq-YXg" secondAttribute="bottom" id="4Cw-lt-oBP"/>
+                <constraint firstItem="WkA-Pr-5Wx" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" id="FqD-WU-QMj"/>
+                <constraint firstItem="OoP-1x-YP5" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" id="HfS-Ci-zfe"/>
+                <constraint firstItem="fFx-TB-i73" firstAttribute="centerX" secondItem="iN0-l3-epB" secondAttribute="centerX" id="NLU-xl-Vab"/>
+                <constraint firstItem="fFx-TB-i73" firstAttribute="centerY" secondItem="iN0-l3-epB" secondAttribute="centerY" id="P0Y-lp-uG2"/>
+                <constraint firstAttribute="trailing" secondItem="OoP-1x-YP5" secondAttribute="trailing" id="QuP-O3-Va2"/>
+                <constraint firstItem="WkA-Pr-5Wx" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" id="VMZ-Ru-4Gg"/>
+                <constraint firstAttribute="bottom" secondItem="OoP-1x-YP5" secondAttribute="bottom" id="o3H-JM-c4y"/>
+                <constraint firstAttribute="trailing" secondItem="WkA-Pr-5Wx" secondAttribute="trailing" id="pvn-tk-uDY"/>
+                <constraint firstItem="zNc-yq-YXg" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" id="tnN-du-EdQ"/>
+            </constraints>
+            <connections>
+                <outlet property="txtHeightConstant" destination="hGe-FL-gCT" id="2Tc-8U-aV0"/>
+                <outlet property="txtText" destination="fFx-TB-i73" id="kUB-J5-287"/>
+                <outlet property="vwLeftBorder" destination="zNc-yq-YXg" id="96a-6f-dih"/>
+                <outlet property="vwRightBorder" destination="OoP-1x-YP5" id="DVo-9q-z81"/>
+                <outlet property="vwTopBorder" destination="WkA-Pr-5Wx" id="ccK-HT-gXF"/>
+            </connections>
+            <point key="canvasLocation" x="33.5" y="54.5"/>
         </view>
     </objects>
 </document>

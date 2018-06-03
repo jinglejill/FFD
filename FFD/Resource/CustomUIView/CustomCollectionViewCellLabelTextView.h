@@ -9,5 +9,7 @@
 #import <UIKit/UIKit.h>
 
 @interface CustomCollectionViewCellLabelTextView : UICollectionViewCell
-
+@property (strong, nonatomic) IBOutlet UILabel *lblTitle;
+@property (strong, nonatomic) IBOutlet UITextView *txtValue;
+@property (strong, nonatomic) IBOutlet NSLayoutConstraint *lblWidthConstant;
 @end

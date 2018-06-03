@@ -9,5 +9,7 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedProvince : NSObject
+@property (retain, nonatomic) NSMutableArray *provinceList;
 
++ (SharedProvince *)sharedProvince;
 @end

@@ -9,5 +9,8 @@
 #import <UIKit/UIKit.h>
 
 @interface CustomTableViewCellOrderHistory : UITableViewCell
+@property (strong, nonatomic) IBOutlet UILabel *lblMenu;
 
+@property (strong, nonatomic) IBOutlet UILabel *lblQuantity;
+@property (strong, nonatomic) IBOutlet UILabel *lblNote;
 @end

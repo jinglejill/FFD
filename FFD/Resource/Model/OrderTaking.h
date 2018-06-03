@@ -26,8 +26,11 @@
 @property (nonatomic) NSInteger idInserted;
 
 @property (nonatomic) NSInteger menuOrderNo;
+@property (nonatomic) NSInteger subMenuOrderNo;
+@property (nonatomic) NSString *cancelDiscountReason;
 
 
+@property (nonatomic) NSInteger branchID;
 
 
 
@@ -35,11 +38,36 @@
 +(NSInteger)getNextID;
 +(void)addObject:(OrderTaking *)orderTaking;
 +(void)removeObject:(OrderTaking *)orderTaking;
++(void)addList:(NSMutableArray *)orderTakingList;
 +(void)removeList:(NSMutableArray *)orderTakingList;
 +(OrderTaking *)getOrderTaking:(NSInteger)orderTakingID;
+
 +(OrderTaking *)getOrderTakingWithCustomerTableID:(NSInteger)customerTableID menuID:(NSInteger)menuID takeAway:(NSInteger)takeAway noteIDListInText:(NSString *)noteIDListInText status:(NSInteger)status;
++(NSMutableArray *)getOrderTakingListWithStatus:(NSInteger)status orderTakingList:(NSMutableArray *)orderTakingList;
 +(NSMutableArray *)getOrderTakingListWithCustomerTableID:(NSInteger)customerTableID status:(NSInteger)status;
-+(NSMutableArray *)getOrderTakingListOccupyWithCustomerTableID:(NSInteger)customerTableID;
++(NSMutableArray *)getOrderTakingListWithCustomerTableID:(NSInteger)customerTableID statusList:(NSArray *)statusList;
 +(NSInteger)getTotalQuantity:(NSMutableArray *)orderTakingList;
-+(NSInteger)getTotalAmount:(NSMutableArray *)orderTakingList;
++(NSInteger)getSubTotalAmount:(NSMutableArray *)orderTakingList;
++(NSInteger)getSubTotalAmountAllowDiscount:(NSMutableArray *)orderTakingList;
++(NSMutableArray *)sortOrderTakingList:(NSMutableArray *)orderTakingList;
++(NSMutableArray *)sortOrderTakingListAndReason:(NSMutableArray *)orderTakingList;
++(NSMutableArray *)createSumUpOrderTakingFromSeveralSendToKitchen:(NSMutableArray *)orderTakingList;
++(NSMutableArray *)createSumUpOrderTakingGroupByNoteAndPriceFromSeveralSendToKitchen:(NSMutableArray *)orderTakingList;
++(NSMutableArray *)createSumUpOrderTakingGroupByNoteFromSeveralSendToKitchen:(NSMutableArray *)orderTakingList;
++(NSMutableArray *)getOrderTakingListWithReceiptID:(NSInteger)receiptID orderTakingList:(NSMutableArray *)orderTakingList;
++(NSMutableArray *)getOrderTakingListWithReceiptList:(NSMutableArray *)receiptList;
++(NSMutableArray *)getOrderTakingListWithMenuID:(NSInteger)menuID;
++(void)updateIdInserted:(OrderTaking *)orderTaking;
++(void)deleteOrderTakingDuplicateKey:(OrderTaking *)orderTaking;
++(void)insertOrderTakingDuplicateKey:(OrderTaking *)orderTaking;
++(NSMutableArray *)getOrderTakingListWithCustomerTableID:(NSInteger)customerTableID status:(NSInteger)status takeAway:(NSInteger)takeAway menuID:(NSInteger)menuID noteIDListInText:(NSString *)noteIDListInText specialPrice:(float)specialPrice cancelDiscountReason:(NSString *)cancelDiscountReason;
++(OrderTaking *)getOrderTakingWithCustomerTableID:(NSInteger)customerTableID status:(NSInteger)status takeAway:(NSInteger)takeAway menuID:(NSInteger)menuID noteIDListInText:(NSString *)noteIDListInText specialPrice:(float)specialPrice cancelDiscountReason:(NSString *)cancelDiscountReason;
++(BOOL)checkIdInserted:(NSMutableArray *)orderTakingList;
++(NSMutableArray *)getOrderTakingListWithStatus:(NSInteger)status takeAway:(NSInteger)takeAway menuID:(NSInteger)menuID orderTakingList:(NSMutableArray *)orderTakingList;
++(NSMutableArray *)sortListByNoteIDListInText:(NSMutableArray *)orderTakingList;
++(NSMutableArray *)sortListByModifiedDateDesc:(NSMutableArray *)orderTakingList;
++(NSMutableArray *)separateOrder:(NSMutableArray *)orderTakingList;
++(NSMutableArray *)getOrderTakingListWithReceiptID:(NSInteger)receiptID branchID:(NSInteger)branchID;
++(NSMutableArray *)createSumUpOrderTakingWithTheSameMenuAndNote:(NSMutableArray *)orderTakingList;
++(float)getSumSpecialPrice:(NSMutableArray *)orderTakingList;
 @end

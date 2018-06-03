@@ -7,7 +7,9 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "CredentialsDb.h"
+
 
 @interface MainTabBarController : UITabBarController
-
+@property (strong, nonatomic) CredentialsDb *credentialsDb;
 @end

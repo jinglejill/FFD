@@ -9,5 +9,15 @@
 #import "SharedSpecialPriceProgram.h"
 
 @implementation SharedSpecialPriceProgram
+@synthesize specialPriceProgramList;
 
++(SharedSpecialPriceProgram *)sharedSpecialPriceProgram {
+    static dispatch_once_t pred;
+    static SharedSpecialPriceProgram *shared = nil;
+    dispatch_once(&pred, ^{
+        shared = [[SharedSpecialPriceProgram alloc] init];
+        shared.specialPriceProgramList = [[NSMutableArray alloc]init];
+    });
+    return shared;
+}
 @end

@@ -15,37 +15,71 @@
             <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
-                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="เบอร์โทร." textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="btg-WM-VOJ">
-                    <rect key="frame" x="16" y="15" width="60" height="18"/>
-                    <constraints>
-                        <constraint firstAttribute="width" constant="60" id="s5d-dX-X0Q"/>
-                    </constraints>
-                    <fontDescription key="fontDescription" type="system" pointSize="15"/>
-                    <nil key="textColor"/>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="ที่อยู่ 8:" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="btg-WM-VOJ">
+                    <rect key="frame" x="16" y="11" width="43" height="17"/>
+                    <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="14"/>
                     <nil key="highlightedColor"/>
                 </label>
-                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="นาย ก" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="hKZ-yl-2h2">
-                    <rect key="frame" x="84" y="15" width="275" height="21"/>
-                    <constraints>
-                        <constraint firstAttribute="height" constant="21" id="Tta-ll-tgc"/>
-                    </constraints>
-                    <fontDescription key="fontDescription" type="system" pointSize="15"/>
-                    <nil key="textColor"/>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" verticalHuggingPriority="251" text="นาย ก" textAlignment="right" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="hKZ-yl-2h2">
+                    <rect key="frame" x="67" y="11" width="292" height="17"/>
+                    <fontDescription key="fontDescription" type="system" pointSize="14"/>
                     <nil key="highlightedColor"/>
                 </label>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="WNj-9X-pIQ">
+                    <rect key="frame" x="16" y="666" width="343" height="1"/>
+                    <color key="backgroundColor" cocoaTouchSystemColor="groupTableViewBackgroundColor"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="1" id="juJ-3y-85N"/>
+                    </constraints>
+                </view>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="4tj-fQ-gqx">
+                    <rect key="frame" x="67" y="12" width="15" height="15"/>
+                    <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="15" id="Qq9-yw-PbE"/>
+                        <constraint firstAttribute="width" constant="15" id="nr1-NE-cLK"/>
+                    </constraints>
+                </view>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="zkf-z5-HRb">
+                    <rect key="frame" x="82" y="12" width="15" height="15"/>
+                    <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="15" id="Jb5-IN-9xX"/>
+                        <constraint firstAttribute="width" constant="15" id="uGr-Un-wXS"/>
+                    </constraints>
+                </view>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="mfq-Ad-uwE">
+                    <rect key="frame" x="97" y="12" width="15" height="15"/>
+                    <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                    <constraints>
+                        <constraint firstAttribute="width" constant="15" id="BQS-6r-Dq7"/>
+                        <constraint firstAttribute="height" constant="15" id="hXK-OS-con"/>
+                    </constraints>
+                </view>
             </subviews>
             <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
             <constraints>
                 <constraint firstItem="hKZ-yl-2h2" firstAttribute="leading" secondItem="btg-WM-VOJ" secondAttribute="trailing" constant="8" id="0ir-9O-Wix"/>
-                <constraint firstItem="hKZ-yl-2h2" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" constant="15" id="IjC-4u-io2"/>
-                <constraint firstItem="hKZ-yl-2h2" firstAttribute="leading" secondItem="btg-WM-VOJ" secondAttribute="trailing" constant="8" id="Vzg-mh-dQW"/>
+                <constraint firstItem="4tj-fQ-gqx" firstAttribute="leading" secondItem="hKZ-yl-2h2" secondAttribute="leading" id="BxC-1k-rwH"/>
+                <constraint firstItem="4tj-fQ-gqx" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" constant="12" id="CzU-SM-Xdl"/>
+                <constraint firstAttribute="bottom" secondItem="WNj-9X-pIQ" secondAttribute="bottom" id="GXK-Zs-X7n"/>
+                <constraint firstItem="hKZ-yl-2h2" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" constant="11" id="IjC-4u-io2"/>
+                <constraint firstItem="zkf-z5-HRb" firstAttribute="leading" secondItem="4tj-fQ-gqx" secondAttribute="trailing" id="LTt-7r-XKf"/>
+                <constraint firstItem="mfq-Ad-uwE" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" constant="12" id="TYh-lY-wIz"/>
+                <constraint firstItem="zkf-z5-HRb" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" constant="12" id="Y2X-Vn-JOH"/>
                 <constraint firstAttribute="trailing" secondItem="hKZ-yl-2h2" secondAttribute="trailing" constant="16" id="bdc-Vz-FhD"/>
+                <constraint firstAttribute="trailing" secondItem="WNj-9X-pIQ" secondAttribute="trailing" constant="16" id="cJ6-9u-Vxj"/>
+                <constraint firstItem="WNj-9X-pIQ" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" constant="16" id="dcf-7g-nrn"/>
+                <constraint firstItem="mfq-Ad-uwE" firstAttribute="leading" secondItem="zkf-z5-HRb" secondAttribute="trailing" id="or8-eM-1kV"/>
                 <constraint firstItem="btg-WM-VOJ" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" constant="16" id="vgy-NW-ipg"/>
-                <constraint firstItem="btg-WM-VOJ" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" constant="15" id="wRo-je-y1w"/>
+                <constraint firstItem="btg-WM-VOJ" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" constant="11" id="wRo-je-y1w"/>
             </constraints>
             <connections>
                 <outlet property="lblTitle" destination="btg-WM-VOJ" id="nDB-W2-aHu"/>
                 <outlet property="lblValue" destination="hKZ-yl-2h2" id="jld-Bq-sXR"/>
+                <outlet property="vwColor1" destination="4tj-fQ-gqx" id="NNw-uz-IfV"/>
+                <outlet property="vwColor2" destination="zkf-z5-HRb" id="tkM-Yq-aTW"/>
+                <outlet property="vwColor3" destination="mfq-Ad-uwE" id="Cq2-kO-Hzu"/>
             </connections>
             <point key="canvasLocation" x="70.5" y="54.5"/>
         </view>

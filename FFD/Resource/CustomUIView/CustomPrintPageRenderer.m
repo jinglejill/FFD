@@ -13,11 +13,29 @@
 - (id)init
 {
     self = [super init];
-    _A4PageWidth = 595.2;
-    _A4PageHeight = 841.8;
+    _pageWidth = 595.2;
+    _pageHeight = 841.8;
     
     
-    CGRect pageFrame = CGRectMake(0, 0, _A4PageWidth, _A4PageHeight);
+    CGRect pageFrame = CGRectMake(0, 0, _pageWidth, _pageHeight);
+    CGRect inset = CGRectInset(pageFrame, 10, 10);
+    [self setValue:[NSValue value:&pageFrame withObjCType:@encode(CGRect)] forKey:@"paperRect"];
+    [self setValue:[NSValue value:&inset withObjCType:@encode(CGRect)] forKey:@"printableRect"];
+    
+    
+    return self;
+}
+
+- (id)initWithPageWidth:(float)width height:(float)height
+{
+    self = [super init];
+    _pageWidth = width;    
+    _pageHeight = height;
+    
+    
+    
+    
+    CGRect pageFrame = CGRectMake(0, 0, _pageWidth, _pageHeight);
     CGRect inset = CGRectInset(pageFrame, 10, 10);
     [self setValue:[NSValue value:&pageFrame withObjCType:@encode(CGRect)] forKey:@"paperRect"];
     [self setValue:[NSValue value:&inset withObjCType:@encode(CGRect)] forKey:@"printableRect"];
@@ -32,10 +50,9 @@
     for(int i=0; i<[htmlContentList count]; i++)
     {
         NSString *htmlContent = htmlContentList[i];
-        CustomPrintPageRenderer *printPageRenderer = [[CustomPrintPageRenderer alloc]init];
         UIMarkupTextPrintFormatter *printFormatter = [[UIMarkupTextPrintFormatter alloc]initWithMarkupText:htmlContent];
-        [printPageRenderer addPrintFormatter:printFormatter startingAtPageAtIndex:i];
-        [printPageRendererList addObject:printPageRenderer];
+        [self addPrintFormatter:printFormatter startingAtPageAtIndex:i];
+        [printPageRendererList addObject:self];
     }
     
     NSData *pdfData = [self drawPDFUsingPrintPageRenderer:printPageRendererList];
@@ -58,8 +75,7 @@
     
     for(int i=0; i<[printPageRendererList count]; i++)
     {
-        UIGraphicsBeginPDFPage();
-        
+        UIGraphicsBeginPDFPageWithInfo(CGRectMake(0, 0, _pageWidth, _pageHeight), NULL);
         [printPageRendererList[i] drawPageAtIndex:i inRect:UIGraphicsGetPDFContextBounds()];
     }
     

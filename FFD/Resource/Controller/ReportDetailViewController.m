@@ -7,127 +7,274 @@
 //
 
 #import "ReportDetailViewController.h"
-#import "ReportDetailInTableViewController.h"
-#import "SalesDaily.h"
-#import "SalesWeekly.h"
-#import "SalesMonthly.h"
-#import "SalesByItemData.h"
-
-
 
 
 @interface ReportDetailViewController ()
 {
-    NSMutableArray *_salesDailyList;
-    NSMutableArray *_salesWeeklyList;
-    NSMutableArray *_salesMonthlyList;
-    NSMutableArray *_salesByItemDataList;
 }
-@property (nonatomic, strong) IBOutlet CPTGraphHostingView *hostView;
-@property (nonatomic, strong) CPTBarPlot *salesByItemPlot;
-@property (nonatomic, strong) NSMutableArray *arrValueAnnotation;
-@property (nonatomic, strong) NSMutableArray *arrLabelAnnotation;
-@property (nonatomic, strong) NSMutableArray *arrLabelAnnotation2;
-
--(void)initPlot;
--(void)configureGraph;
--(void)configurePlots;
--(void)configureAxes;
 @end
 
 @implementation ReportDetailViewController
-@synthesize btnListOrGraph;
-@synthesize btnExportData;
-@synthesize hostView;
-@synthesize salesByItemPlot;
-@synthesize arrValueAnnotation;
-@synthesize arrLabelAnnotation;
-@synthesize arrLabelAnnotation2;
 @synthesize startDate;
 @synthesize endDate;
-@synthesize frequencyCriteria;
+@synthesize reportView;
+@synthesize frequency;
+@synthesize reportType;
+@synthesize reportGroup;
 
-
-- (IBAction)viewInListOrGraph:(id)sender
+- (void)segToVCWithReportGroup:(enum reportGroup)reportGroup reportType:(enum reportType)reportType frequency:(enum frequency)frequency reportView:(enum reportView)reportView
 {
-    [self performSegueWithIdentifier:@"segReportDetailInTable" sender:self];
+    switch (reportGroup)
+    {
+        case reportGroupSales:
+        {
+            switch (reportType)
+            {
+                case reportTypeSalesAll:
+                {
+                    switch (frequency)
+                    {
+                        case frequencyDaily:
+                        {
+                            switch (reportView)
+                            {
+                                case reportViewGraph:
+                                {
+                                    [self performSegueWithIdentifier:@"segReportSalesAllDailyGraph" sender:self];
+                                    return;
+                                }
+                                    break;
+                                case reportViewTable:
+                                {
+                                    [self performSegueWithIdentifier:@"segReportSalesAllDailyTable" sender:self];
+                                    return;
+                                }
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                            break;
+                        case frequencyWeekly:
+                        {
+                            switch (reportView)
+                            {
+                                case reportViewGraph:
+                                {
+                                    [self performSegueWithIdentifier:@"segReportSalesAllWeeklyGraph" sender:self];
+                                    return;
+                                }
+                                break;
+                                case reportViewTable:
+                                {
+                                    [self performSegueWithIdentifier:@"segReportSalesAllWeeklyTable" sender:self];
+                                    return;
+                                }
+                                break;
+                                default:
+                                break;
+                            }
+                        }
+                        break;
+                        case frequencyMonthly:
+                        {
+                            switch (reportView)
+                            {
+                                case reportViewGraph:
+                                {
+                                    [self performSegueWithIdentifier:@"segReportSalesAllMonthlyGraph" sender:self];
+                                    return;
+                                }
+                                break;
+                                case reportViewTable:
+                                {
+                                    [self performSegueWithIdentifier:@"segReportSalesAllMonthlyTable" sender:self];
+                                    return;
+                                }
+                                break;
+                                default:
+                                break;
+                            }
+                        }
+                        break;
+
+                        default:
+                            break;
+                    }
+                }
+                    break;
+                case reportTypeSalesByMenuType:
+                {
+                    switch (frequency) {
+                        case frequencyDaily:
+                        {
+                            switch (reportView) {
+                                case reportViewGraph:
+                                {
+                                    [self performSegueWithIdentifier:@"segReportSalesByMenuTypeDailyGraph" sender:self];
+                                    return;
+                                }
+                                    break;
+                                case reportViewTable:
+                                {
+                                    [self performSegueWithIdentifier:@"segReportSalesByMenuTypeDailyTable" sender:self];
+                                    return;
+                                }
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                            break;
+                        case frequencyWeekly:
+                        {
+                            switch (reportView) {
+                                case reportViewGraph:
+                                {
+                                    [self performSegueWithIdentifier:@"segReportSalesByMenuTypeWeeklyGraph" sender:self];
+                                    return;
+                                }
+                                break;
+                                case reportViewTable:
+                                {
+                                    [self performSegueWithIdentifier:@"segReportSalesByMenuTypeWeeklyTable" sender:self];
+                                    return;
+                                }
+                                break;
+                                default:
+                                break;
+                            }
+                        }
+                        break;
+                        case frequencyMonthly:
+                        {
+                            switch (reportView) {
+                                case reportViewGraph:
+                                {
+                                    [self performSegueWithIdentifier:@"segReportSalesByMenuTypeMonthlyGraph" sender:self];
+                                    return;
+                                }
+                                break;
+                                case reportViewTable:
+                                {
+                                    [self performSegueWithIdentifier:@"segReportSalesByMenuTypeMonthlyTable" sender:self];
+                                    return;
+                                }
+                                break;
+                                default:
+                                break;
+                            }
+                        }
+                        break;
+                        default:
+                            break;
+                    }
+                }
+                    break;
+                case reportTypeSalesByMenu:
+                {
+                    switch (reportView) {
+                        case reportViewGraph:
+                        {
+
+                        }
+                            break;
+                        case reportViewTable:
+                        {
+                            [self performSegueWithIdentifier:@"segReportSalesByMenuTable" sender:self];
+                            return;
+                        }
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                    break;
+                case reportTypeSalesByMember:
+                {
+                    switch (reportView) {
+                        case reportViewGraph:
+                        {
+                            
+                        }
+                        break;
+                        case reportViewTable:
+                        {
+                            [self performSegueWithIdentifier:@"segReportSalesByMemberTable" sender:self];
+                            return;
+                        }
+                        break;
+                        default:
+                        break;
+                    }
+                }
+                break;
+                default:
+                    break;
+            }
+        }
+            break;
+            
+        default:
+            break;
+    }
+    [self performSegueWithIdentifier:@"segReportBlank" sender:self];
+}
+
+- (IBAction)unwindToReportDetail:(UIStoryboardSegue *)segue
+{
+    CustomReportViewController *vc = segue.sourceViewController;
+    reportGroup = vc.reportGroup;
+    reportType = vc.reportType;
+    frequency = vc.frequency;
+    reportView = vc.reportView;
+    startDate = vc.startDate;
+    endDate = vc.endDate;
+
 }
 
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
 {
-    if([[segue identifier] isEqualToString:@"segReportDetailInTable"])
-    {
-        ReportDetailInTableViewController *vc = segue.destinationViewController;
-        vc.salesDailyList = _salesDailyList;
-    }    
+    CustomReportViewController *vc = segue.destinationViewController;
+    vc.startDate = startDate;
+    vc.endDate = endDate;
+    vc.reportView = reportView;
+    vc.frequency = frequency;
+    vc.reportType = reportType;
+    vc.reportGroup = reportGroup;
 }
 
-
-- (IBAction)exportData:(id)sender
+-(void)viewWillAppear:(BOOL)animated
 {
-    
-}
-
--(void)viewDidLayoutSubviews
-{
-    [super viewDidLayoutSubviews];
-    
-    
-    
+    [super viewWillAppear:animated];
+    [self segToVCWithReportGroup:reportGroup reportType:reportType frequency:frequency reportView:reportView];
 }
 
 - (void)loadView
 {
     [super loadView];
     
-    
-    
-    _salesByItemDataList = [[NSMutableArray alloc]init];
 
-
-    
-    
-    
-    
-    [self setButtonDesign:btnListOrGraph];
-    [self setButtonDesign:btnExportData];
-    
-    
-    
     [self loadViewProcess];
     
 }
 
 - (void)loadViewProcess
 {
-    
-    [self loadingOverlayView];
-    self.homeModel = [[HomeModel alloc]init];
-    self.homeModel.delegate = self;
-    
     if(!startDate)
     {
-        startDate = [Utility currentDateTime];
+        startDate = [Utility getPrevious14Days];
         endDate = [Utility currentDateTime];
         
         
-        NSCalendar *calendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian];//year christ
-        [calendar setTimeZone:[NSTimeZone timeZoneWithName:@"GMT"]];//local time +7]
-        startDate = [calendar dateBySettingHour:0 minute:0 second:0 ofDate:startDate options:0];
-        endDate = [calendar dateBySettingHour:23 minute:59 second:59 ofDate:endDate options:0];
-    }
-    switch (frequencyCriteria) {
-        case 0:
-            [self.homeModel downloadItems:dbSalesReport withData:@[startDate,endDate]];
-            break;
-        case 1:
-            [self.homeModel downloadItems:dbSalesWeeklyReport withData:@[startDate,endDate]];
-            break;
-        case 2:
-            [self.homeModel downloadItems:dbSalesMonthlyReport withData:@[startDate,endDate]];
-            break;
-        default:
-            break;
+        startDate = [Utility setStartOfTheDay:startDate];
+        endDate = [Utility setEndOfTheDay:endDate];
+        
+        
+        reportGroup = 0;
+        reportType = 0;
+        frequency = 0;
+        reportView = 0;
     }
 }
 
@@ -140,481 +287,6 @@
     [tapGesture setCancelsTouchesInView:NO];
 }
 
-- (void)itemsDownloaded:(NSArray *)items
-{
-    [super itemsDownloaded:items];
-    
-    if(self.homeModel.propCurrentDB == dbSalesReport)
-    {
-        _salesDailyList = [items[0] mutableCopy];
-    }
-    else if(self.homeModel.propCurrentDB == dbSalesWeeklyReport)
-    {
-        _salesWeeklyList = [items[0] mutableCopy];
-    }
-    else if(self.homeModel.propCurrentDB == dbSalesMonthlyReport)
-    {
-        _salesMonthlyList = [items[0] mutableCopy];
-    }
-    
-    
-    dispatch_async(dispatch_get_main_queue(),^ {
-        [self removeOverlayViews];
-        [self setData];
-        [self initPlot];
-    } );
-}
 
--(void)setData
-{
-    switch (frequencyCriteria) {
-        case 0:
-        {
-            [_salesByItemDataList removeAllObjects];
-            for(SalesDaily *item in _salesDailyList)
-            {
-                SalesByItemData *salesByItem = [[SalesByItemData alloc]init];
-                salesByItem.item = [Utility dateToString:item.date toFormat:@"d-MMM"];
-                salesByItem.item2 = [Utility getDay:item.dayOfWeek];
-                salesByItem.value = item.sales;//test
-                
-                [_salesByItemDataList addObject:salesByItem];
-            }
-        }
-            break;
-        case 1:
-        {
-            [_salesByItemDataList removeAllObjects];
-            for(SalesWeekly *item in _salesWeeklyList)
-            {
-                SalesByItemData *salesByItem = [[SalesByItemData alloc]init];
-                salesByItem.item = [NSString stringWithFormat:@"%ld",item.weekNo];//[Utility dateToString:item.date toFormat:@"d-MMM"];
-                salesByItem.item2 = [Utility dateToString:item.date toFormat:@"d-MMM-yy"];
-                salesByItem.value = item.sales;//test
-                
-                [_salesByItemDataList addObject:salesByItem];
-            }
-        }
-            break;
-        case 2:
-        {
-            [_salesByItemDataList removeAllObjects];
-            for(SalesMonthly *item in _salesMonthlyList)
-            {
-                SalesByItemData *salesByItem = [[SalesByItemData alloc]init];
-                salesByItem.item = [Utility dateToString:item.date toFormat:@"MMM-yy"];
-                salesByItem.item2 = @"";
-                salesByItem.value = item.sales;//test
-                
-                [_salesByItemDataList addObject:salesByItem];
-            }
-        }
-            break;
-        default:
-            break;
-    }
-    
-    
-    //    [self sortBySumValue];
-    
-    //    NSString *total = [NSString stringWithFormat:@"%f",[self getTotalSumValue]];
-    //    total = [Utility formatBaht:total withMinFraction:0 andMaxFraction:0];
-    //    lblTotal.text = [NSString stringWithFormat:@"%@",total];
-}
-
-#pragma mark - Chart behavior
--(void)initPlot {
-    self.hostView.allowPinchScaling = NO;
-    [self configureGraph];
-    [self configurePlots];
-    [self configureAxes];
-    //    [self.salesByItemPlot reloadData];
-}
-
--(void)configureGraph {
-    // 1 - Create the graph
-    CPTGraph *graph = [[CPTXYGraph alloc] initWithFrame:self.hostView.bounds];
-    graph.plotAreaFrame.masksToBorder = NO;
-    self.hostView.hostedGraph = graph;
-    // 2 - Configure the graph
-    [graph applyTheme:[CPTTheme themeNamed:kCPTPlainWhiteTheme]];
-    graph.paddingBottom = 38.0f;
-    graph.paddingLeft  = 13.0f;
-    graph.paddingTop    = -1.0f;
-    graph.paddingRight  = 13.0f;
-    // 3 - Set up styles
-    CPTMutableTextStyle *titleStyle = [CPTMutableTextStyle textStyle];
-    titleStyle.color = [CPTColor blackColor];
-    titleStyle.fontName = @"Helvetica-Bold";
-    titleStyle.fontSize = 14.0f;
-    // 4 - Set up title
-    NSString *title = @"Daily sales";//@"Sales by Channel";
-    graph.title = title;
-    graph.titleTextStyle = titleStyle;
-    graph.titlePlotAreaFrameAnchor = CPTRectAnchorTop;
-    graph.titleDisplacement = CGPointMake(0.0f, -16.0f);
-    // 5 - Set up plot space
-    CGFloat xMin = 0.0f;
-    CGFloat xMax = [_salesByItemDataList count];
-    CGFloat yMin = 0.0f;
-    
-    
-    float maxValue = [self getMaxValue];
-    //    if(segConType.selectedSegmentIndex==0){maxValue = [self getMaxSumValue];}
-    //    else if(segConType.selectedSegmentIndex==1){maxValue = [self getMaxPercent];}
-    
-    CGFloat yMax = maxValue*1.5;// should determine dynamically based on max price
-    CPTXYPlotSpace *plotSpace = (CPTXYPlotSpace *) graph.defaultPlotSpace;
-    plotSpace.xRange = [CPTPlotRange plotRangeWithLocation:CPTDecimalFromFloat(xMin) length:CPTDecimalFromFloat(xMax)];
-    plotSpace.yRange = [CPTPlotRange plotRangeWithLocation:CPTDecimalFromFloat(yMin) length:CPTDecimalFromFloat(yMax)];
-}
-
--(void)configurePlots {
-    // 1 - Set up the three plots
-    //tBlue color
-    CPTColor *cptColor = [CPTColor colorWithComponentRed:0/255.0 green:123/255.0 blue:255/255.0 alpha:0.5];
-//    CPTColor *cptColor2 = [CPTColor colorWithComponentRed:191/255.0 green:191/255.0 blue:191/255.0 alpha:1];
-    CPTBarPlot *barPlot = [[CPTBarPlot alloc]init];
-    barPlot.fill =  [CPTFill fillWithColor:cptColor];
-    
-    self.salesByItemPlot = barPlot;
-    self.salesByItemPlot.identifier = CPDSalesByCat;
-    // 2 - Set up line style
-    CPTMutableLineStyle *barLineStyle = [[CPTMutableLineStyle alloc] init];
-    barLineStyle.lineColor = cptColor;
-    barLineStyle.lineWidth = 0.5;
-    // 3 - Add plots to graph
-    CPTGraph *graph = self.hostView.hostedGraph;
-    CGFloat barX = CPDBarInitialX;
-    NSArray *plots = [NSArray arrayWithObjects:self.salesByItemPlot, nil];
-    for (CPTBarPlot *plot in plots) {
-        plot.dataSource = self;
-        plot.delegate = self;
-        plot.barWidth = CPTDecimalFromDouble(CPDBarWidth);
-        plot.barOffset = CPTDecimalFromDouble(barX);
-        plot.lineStyle = barLineStyle;
-//        plot.fill = [CPTFill fillWithColor:cptColor2];
-        [graph addPlot:plot toPlotSpace:graph.defaultPlotSpace];
-        
-        
-        //initial annotation for value
-//        if(arrValueAnnotation == nil && [_salesByItemDataList count]>0)
-        if([_salesByItemDataList count]>0)
-        {
-            arrValueAnnotation = [[NSMutableArray alloc]init];
-            for(int index=0; index<[_salesByItemDataList count]; index++)
-            {
-                NSNumber *x = [NSNumber numberWithInt:0];
-                NSNumber *y = [NSNumber numberWithInt:0];
-                NSArray *anchorPoint = [NSArray arrayWithObjects:x, y, nil];
-                CPTPlotSpaceAnnotation *priceAnnotation = (CPTPlotSpaceAnnotation*)[[CPTPlotSpaceAnnotation alloc] initWithPlotSpace:plot.plotSpace anchorPlotPoint:anchorPoint];
-                
-                [arrValueAnnotation addObject:priceAnnotation];
-            }
-        }
-        //initial annotation for label x axis
-//        if(arrLabelAnnotation == nil && [_salesByItemDataList count]>0)
-        if([_salesByItemDataList count]>0)
-        {
-            arrLabelAnnotation = [[NSMutableArray alloc]init];
-            for(int index=0; index<[_salesByItemDataList count]; index++)
-            {
-                NSNumber *x = [NSNumber numberWithInt:0];
-                NSNumber *y = [NSNumber numberWithInt:0];
-                NSArray *anchorPoint = [NSArray arrayWithObjects:x, y, nil];
-                CPTPlotSpaceAnnotation *labelAnnotation = (CPTPlotSpaceAnnotation*)[[CPTPlotSpaceAnnotation alloc] initWithPlotSpace:plot.plotSpace anchorPlotPoint:anchorPoint];
-                
-                [arrLabelAnnotation addObject:labelAnnotation];
-            }
-        }
-        
-        //annotation for value
-        for(int index=0; index<[_salesByItemDataList count]; index++)
-        {
-            // 1 - Is the plot hidden?
-            if (plot.isHidden == YES) {
-                return;
-            }
-            // 2 - Create style, if necessary
-            static CPTMutableTextStyle *style = nil;
-            if (!style) {
-                style = [CPTMutableTextStyle textStyle];
-                CPTColor *cptColor = [CPTColor blackColor];
-                style.color= cptColor;
-                style.fontSize = 12.0f;
-                style.fontName = @"HelveticaNeue-Medium";
-            }
-            // 3 - Create annotation, if necessary
-            NSNumber *value = [self numberForPlot:plot field:CPTBarPlotFieldBarTip recordIndex:index];
-            CPTPlotSpaceAnnotation *priceAnnotation = self.arrValueAnnotation[index];
-            
-            
-            // 4 - Create number formatter, if needed
-            static NSNumberFormatter *formatter = nil;
-            if (!formatter) {
-                formatter = [[NSNumberFormatter alloc] init];
-                formatter.numberStyle = NSNumberFormatterDecimalStyle;
-            }
-            // 5 - Create text layer for annotation
-            NSString *strValue = [formatter stringFromNumber:value];
-            CPTTextLayer *textLayer = [[CPTTextLayer alloc] initWithText:strValue style:style];
-            priceAnnotation.contentLayer = textLayer;
-            // 6 - Get plot index based on identifier
-            NSInteger plotIndex = 0;
-            if ([plot.identifier isEqual:CPDSalesByCat] == YES) {
-                plotIndex = 0;
-            }
-            // 7 - Get the anchor point for annotation
-            CGFloat x = index + CPDBarInitialX + (plotIndex * CPDBarWidth);
-            NSNumber *anchorX = [NSNumber numberWithFloat:x];
-            
-            float maxValue = [self getMaxValue];
-            //            if(segConType.selectedSegmentIndex==0){maxValue = [self getMaxSumValue];}
-            //            else if(segConType.selectedSegmentIndex==1){maxValue = [self getMaxPercent];}
-            CGFloat y = [value floatValue] + .05*maxValue;
-            
-            NSNumber *anchorY = [NSNumber numberWithFloat:y];
-            priceAnnotation.anchorPlotPoint = [NSArray arrayWithObjects:anchorX, anchorY, nil];
-            // 8 - Add the annotation
-            [plot.graph.plotAreaFrame.plotArea addAnnotation:priceAnnotation];
-            
-        }
-        
-        //label x axis
-        for(int index=0; index<[_salesByItemDataList count]; index++)
-        {
-            // 1 - Is the plot hidden?
-            if (plot.isHidden == YES) {
-                return;
-            }
-            // 2 - Create style, if necessary
-            static CPTMutableTextStyle *style = nil;
-            if (!style) {
-                style = [CPTMutableTextStyle textStyle];
-                
-                CPTColor *cptColor = [CPTColor blackColor];
-                style.color= cptColor;
-                style.fontSize = 10.0f;
-                style.fontName = @"HelveticaNeue-Medium";
-            }
-            // 3 - Create annotation, if necessary
-            NSString *label = ((SalesByItemData *)_salesByItemDataList[index]).item;
-            CPTPlotSpaceAnnotation *labelAnnotation = self.arrLabelAnnotation[index];
-            
-            
-            // 4 - Create number formatter, if needed
-            static NSNumberFormatter *formatter = nil;
-            if (!formatter) {
-                formatter = [[NSNumberFormatter alloc] init];
-                [formatter setMaximumFractionDigits:2];
-            }
-            // 5 - Create text layer for annotation
-            CPTTextLayer *textLayer = [[CPTTextLayer alloc] initWithText:label style:style];
-            labelAnnotation.contentLayer = textLayer;
-            // 6 - Get plot index based on identifier
-            NSInteger plotIndex = 0;
-            if ([plot.identifier isEqual:CPDSalesByCat] == YES) {
-                plotIndex = 0;
-            }
-            // 7 - Get the anchor point for annotation
-            CGFloat x = index + CPDBarInitialX + (plotIndex * CPDBarWidth);
-            NSNumber *anchorX = [NSNumber numberWithFloat:x];
-            CGFloat y;
-            float maxValue = [self getMaxValue];
-            //            if(segConType.selectedSegmentIndex==0){maxValue = [self getMaxSumValue];}
-            //            else if(segConType.selectedSegmentIndex==1){maxValue = [self getMaxPercent];}
-            //            if([self getXMax]<=8)
-            {
-                y = .05*maxValue*-1;//testing
-            }
-            //            else
-            //            {
-            //                if(index % 2 == 0)
-            //                {
-            //                    y = .05*maxValue*-2;
-            //                }
-            //                else if(index % 2 == 1)
-            //                {
-            //                    y = .05*maxValue*-4;
-            //                }
-            //            }
-            
-            
-            NSNumber *anchorY = [NSNumber numberWithFloat:y];
-            labelAnnotation.anchorPlotPoint = [NSArray arrayWithObjects:anchorX, anchorY, nil];
-            // 8 - Add the annotation
-            [plot.graph.plotAreaFrame.plotArea addAnnotation:labelAnnotation];
-            
-        }
-        
-        
-        ///////second line for x-axis
-        //initial annotation for label x axis
-        //        if(arrLabelAnnotation == nil && [_salesByItemDataList count]>0)
-        if([_salesByItemDataList count]>0)
-        {
-            arrLabelAnnotation2 = [[NSMutableArray alloc]init];
-            for(int index=0; index<[_salesByItemDataList count]; index++)
-            {
-                NSNumber *x = [NSNumber numberWithInt:0];
-                NSNumber *y = [NSNumber numberWithInt:0];
-                NSArray *anchorPoint = [NSArray arrayWithObjects:x, y, nil];
-                CPTPlotSpaceAnnotation *labelAnnotation = (CPTPlotSpaceAnnotation*)[[CPTPlotSpaceAnnotation alloc] initWithPlotSpace:plot.plotSpace anchorPlotPoint:anchorPoint];
-                
-                [arrLabelAnnotation2 addObject:labelAnnotation];
-            }
-        }
-        //label x axis
-        for(int index=0; index<[_salesByItemDataList count]; index++)
-        {
-            // 1 - Is the plot hidden?
-            if (plot.isHidden == YES) {
-                return;
-            }
-            // 2 - Create style, if necessary
-            static CPTMutableTextStyle *style = nil;
-            if (!style) {
-                style = [CPTMutableTextStyle textStyle];
-                
-                CPTColor *cptColor = [CPTColor blackColor];
-                style.color= cptColor;
-                style.fontSize = 10.0f;
-                style.fontName = @"HelveticaNeue-Medium";
-            }
-            // 3 - Create annotation, if necessary
-            NSString *label = ((SalesByItemData *)_salesByItemDataList[index]).item2;
-            CPTPlotSpaceAnnotation *labelAnnotation = self.arrLabelAnnotation2[index];
-            
-            
-            // 4 - Create number formatter, if needed
-            static NSNumberFormatter *formatter = nil;
-            if (!formatter) {
-                formatter = [[NSNumberFormatter alloc] init];
-                [formatter setMaximumFractionDigits:2];
-            }
-            // 5 - Create text layer for annotation
-            CPTTextLayer *textLayer = [[CPTTextLayer alloc] initWithText:label style:style];
-            labelAnnotation.contentLayer = textLayer;
-            // 6 - Get plot index based on identifier
-            NSInteger plotIndex = 0;
-            if ([plot.identifier isEqual:CPDSalesByCat] == YES) {
-                plotIndex = 0;
-            }
-            // 7 - Get the anchor point for annotation
-            CGFloat x = index + CPDBarInitialX + (plotIndex * CPDBarWidth);
-            NSNumber *anchorX = [NSNumber numberWithFloat:x];
-            CGFloat y;
-            float maxValue = [self getMaxValue];
-            //            if(segConType.selectedSegmentIndex==0){maxValue = [self getMaxSumValue];}
-            //            else if(segConType.selectedSegmentIndex==1){maxValue = [self getMaxPercent];}
-            //            if([self getXMax]<=8)
-            {
-                y = .05*maxValue*-1.5;//testing
-            }
-            //            else
-            //            {
-            //                if(index % 2 == 0)
-            //                {
-            //                    y = .05*maxValue*-2;
-            //                }
-            //                else if(index % 2 == 1)
-            //                {
-            //                    y = .05*maxValue*-4;
-            //                }
-            //            }
-            
-            
-            NSNumber *anchorY = [NSNumber numberWithFloat:y];
-            labelAnnotation.anchorPlotPoint = [NSArray arrayWithObjects:anchorX, anchorY, nil];
-            // 8 - Add the annotation
-            [plot.graph.plotAreaFrame.plotArea addAnnotation:labelAnnotation];
-            
-        }
-        
-        //////////////////
-        barX += CPDBarWidth;
-    }
-}
-
--(void)configureAxes {
-    // 1 - Configure styles
-    CPTMutableTextStyle *axisTitleStyle = [CPTMutableTextStyle textStyle];
-    axisTitleStyle.color = [CPTColor blackColor];
-    axisTitleStyle.fontName = @"Helvetica-Bold";
-    axisTitleStyle.fontSize = 12.0f;
-    CPTMutableLineStyle *axisLineStyle = [CPTMutableLineStyle lineStyle];
-    axisLineStyle.lineWidth = 2.0f;
-    axisLineStyle.lineColor = [[CPTColor blackColor] colorWithAlphaComponent:1];
-    // 2 - Get the graph's axis set
-    CPTXYAxisSet *axisSet = (CPTXYAxisSet *) self.hostView.hostedGraph.axisSet;
-    // 3 - Configure the x-axis
-    axisSet.xAxis.labelingPolicy = CPTAxisLabelingPolicyNone;
-    axisSet.xAxis.title = @"Date";
-    axisSet.xAxis.titleTextStyle = axisTitleStyle;
-    axisSet.xAxis.titleOffset = 34.0f;
-    axisSet.xAxis.axisLineStyle = axisLineStyle;
-    
-    // 4 - Configure the y-axis
-    //    NSArray *yAxisLabel = @[@"Total amount (Baht)",@"Total amount (Percent)"];
-    axisSet.yAxis.labelingPolicy = CPTAxisLabelingPolicyNone;
-    axisSet.yAxis.title = @"ยอดขาย";//yAxisLabel[segConType.selectedSegmentIndex];
-    axisSet.yAxis.titleTextStyle = axisTitleStyle;
-    axisSet.yAxis.titleOffset = 10.0f;
-    axisSet.yAxis.axisLineStyle = axisLineStyle;
-}
-
--(void)hideAnnotation:(CPTGraph *)graph {
-}
-
-#pragma mark - CPTPlotDataSource methods
--(NSUInteger)numberOfRecordsForPlot:(CPTPlot *)plot {
-    return [_salesByItemDataList count];
-}
-
--(NSNumber *)numberForPlot:(CPTPlot *)plot field:(NSUInteger)fieldEnum recordIndex:(NSUInteger)index {
-    if ((fieldEnum == CPTBarPlotFieldBarTip) && (index < [_salesByItemDataList count])) {
-        if ([plot.identifier isEqual:CPDSalesByCat]) {
-            SalesByItemData *salesByItemData = [_salesByItemDataList objectAtIndex:index];
-            
-            NSNumberFormatter *f = [[NSNumberFormatter alloc] init];
-            f.numberStyle = NSNumberFormatterDecimalStyle;
-            
-            //            float value = 0.0;
-            //            if(segConType.selectedSegmentIndex==0){value = salesByItemData.floatSumValue;}
-            //            else if(segConType.selectedSegmentIndex==1){value = salesByItemData.floatPercent;}
-            float value = salesByItemData.value;//test
-            
-            return @(value);
-        }
-        
-    }
-    return [NSDecimalNumber numberWithUnsignedInteger:index];
-}
-
--(CPTFill *)barFillForBarPlot:(CPTBarPlot *)barPlot recordIndex:(NSUInteger)idx
-{
-    SalesByItemData *salesByItemData = [_salesByItemDataList objectAtIndex:idx];
-    if([salesByItemData.item2 isEqualToString:@"Sun"] || [salesByItemData.item2 isEqualToString:@"Sat"])
-    {
-        return [CPTFill fillWithColor:[CPTColor colorWithComponentRed:0/255.0 green:123/255.0 blue:255/255.0 alpha:1]];
-    }
-    else
-    {
-        return [CPTFill fillWithColor:[CPTColor colorWithComponentRed:0/255.0 green:123/255.0 blue:255/255.0 alpha:0.5]];
-    }
-}
-
--(float)getMaxValue
-{
-    float maxValue = 0;
-    for(SalesByItemData *item in _salesByItemDataList)//test
-    {
-        if(item.value>maxValue)
-        {
-            maxValue = item.value;
-        }
-    }
-    return maxValue;
-}
 
 @end

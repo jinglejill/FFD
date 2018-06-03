@@ -8,6 +8,7 @@
 
 #import "CustomViewController.h"
 
-@interface SettingViewController : CustomViewController
-
+@interface SettingViewController : CustomViewController<UICollectionViewDataSource,UICollectionViewDelegate,UICollectionViewDelegateFlowLayout>
+@property (strong, nonatomic) IBOutlet UICollectionView *colVwMenu;
+- (IBAction)unwindToSetting:(UIStoryboardSegue *)segue;
 @end

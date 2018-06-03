@@ -9,5 +9,7 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedReceiptPrint : NSObject
+@property (retain, nonatomic) NSMutableArray *receiptPrintList;
 
++ (SharedReceiptPrint *)sharedReceiptPrint;
 @end

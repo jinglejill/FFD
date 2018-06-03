@@ -9,5 +9,12 @@
 #import "CustomReportViewController.h"
 
 @interface ReportSalesByMemberTableViewController : CustomReportViewController
+@property (strong, nonatomic) IBOutlet UICollectionView *colVwData;
+@property (strong, nonatomic) IBOutlet UICollectionView *colVwSummary;
+@property (strong, nonatomic) IBOutlet UIButton *btnExportData;
 
+
+
+
+- (IBAction)exportData:(id)sender;
 @end

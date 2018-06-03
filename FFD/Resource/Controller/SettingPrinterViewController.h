@@ -8,6 +8,12 @@
 
 #import "CustomSettingViewController.h"
 
-@interface SettingPrinterViewController : CustomSettingViewController
+@interface SettingPrinterViewController : CustomSettingViewController<UITextFieldDelegate>
+@property (strong, nonatomic) IBOutlet UITextField *txtPrinterPortKitchen;
+@property (strong, nonatomic) IBOutlet UITextField *txtPrinterPortKitchen2;
+@property (strong, nonatomic) IBOutlet UITextField *txtPrinterPortDrinks;
+@property (strong, nonatomic) IBOutlet UITextField *txtPrinterPortCashier;
+- (IBAction)unwindToSettingPrinter:(UIStoryboardSegue *)segue;
+
 
 @end

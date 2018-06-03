@@ -9,5 +9,7 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedAddress : NSObject
+@property (retain, nonatomic) NSMutableArray *addressList;
 
++ (SharedAddress *)sharedAddress;
 @end

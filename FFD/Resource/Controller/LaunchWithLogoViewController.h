@@ -7,8 +7,11 @@
 //
 
 #import "CustomViewController.h"
+#import "HomeModel.h"
 
-@interface LaunchWithLogoViewController : CustomViewController<UITextFieldDelegate,UIAlertViewDelegate>
+
+@interface LaunchWithLogoViewController : UIViewController<UITextFieldDelegate,UIAlertViewDelegate,HomeModelProtocol>
 @property (strong, nonatomic) IBOutlet UIProgressView *progressBar;
+@property (strong, nonatomic) IBOutlet UIImageView *imgLogo;
 
 @end

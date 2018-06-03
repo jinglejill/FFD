@@ -12,16 +12,18 @@
 @property (nonatomic) NSInteger tableTakingID;
 @property (nonatomic) NSInteger customerTableID;
 @property (nonatomic) NSInteger servingPerson;
-@property (nonatomic) NSInteger status;
+@property (nonatomic) NSInteger receiptID;
 @property (retain, nonatomic) NSString * modifiedUser;
 @property (retain, nonatomic) NSDate * modifiedDate;
 @property (nonatomic) NSInteger replaceSelf;
 @property (nonatomic) NSInteger idInserted;
 
--(TableTaking *)initWithCustomerTableID:(NSInteger)customerTableID servingPerson:(NSInteger)servingPerson status:(NSInteger)status;
+-(TableTaking *)initWithCustomerTableID:(NSInteger)customerTableID servingPerson:(NSInteger)servingPerson receiptID:(NSInteger)receiptID;
 +(NSInteger)getNextID;
 +(void)addObject:(TableTaking *)tableTaking;
 +(void)removeObject:(TableTaking *)tableTaking;
 +(TableTaking *)getTableTaking:(NSInteger)tableTakingID;
-+(TableTaking *)getTableTakingWithCustomerTableID:(NSInteger)customerTableID status:(NSInteger)status;
++(TableTaking *)getTableTakingWithCustomerTableID:(NSInteger)customerTableID receiptID:(NSInteger)receiptID;
++(NSMutableArray *)getTableTakingListWithCustomerTableList:(NSMutableArray *)customerTableList receiptID:(NSInteger)receiptID;
++(NSInteger)getSumServingPersonWithCustomerTableList:(NSMutableArray *)customerTableList receiptID:(NSInteger)receiptID;
 @end

@@ -30,14 +30,13 @@
 
 +(NSInteger)getNextID
 {
-    NSString *strNameID;
-    NSMutableArray *dataList;
-    dataList = [SharedMenuTypeNote sharedMenuTypeNote].menuTypeNoteList;
-    strNameID = @"menuTypeNoteID";
+    NSString *primaryKeyName = @"menuTypeNoteID";
+    NSString *propertyName = [NSString stringWithFormat:@"_%@",primaryKeyName];
+    NSMutableArray *dataList = [SharedMenuTypeNote sharedMenuTypeNote].menuTypeNoteList;
     
-    NSString *strSortID = [NSString stringWithFormat:@"_%@",strNameID];
-    NSSortDescriptor *sortDescriptor1 = [[NSSortDescriptor alloc] initWithKey:strSortID ascending:NO];
-    NSArray *sortDescriptors = [NSArray arrayWithObjects:sortDescriptor1, nil];
+    
+    NSSortDescriptor *sortDescriptor = [[NSSortDescriptor alloc] initWithKey:propertyName ascending:NO];
+    NSArray *sortDescriptors = [NSArray arrayWithObjects:sortDescriptor, nil];
     NSArray *sortArray = [dataList sortedArrayUsingDescriptors:sortDescriptors];
     dataList = [sortArray mutableCopy];
     
@@ -45,9 +44,9 @@
     {
         return 1;
     }
-    else;
+    else
     {
-        id value = [dataList[0] valueForKey:strNameID];
+        id value = [dataList[0] valueForKey:primaryKeyName];
         NSString *strMaxID = value;
         
         return [strMaxID intValue]+1;
@@ -92,6 +91,8 @@
         [noteList addObject:note];
     }
     
+    
+    noteList = [Note getNoteListWithStatus:1 noteList:noteList];
     return noteList;
 }
 

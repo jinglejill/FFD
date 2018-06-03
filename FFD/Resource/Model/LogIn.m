@@ -30,14 +30,13 @@
 
 +(NSInteger)getNextID
 {
-    NSString *strNameID;
-    NSMutableArray *dataList;
-    dataList = [SharedLogIn sharedLogIn].logInList;
-    strNameID = @"logInID";
+    NSString *primaryKeyName = @"logInID";
+    NSString *propertyName = [NSString stringWithFormat:@"_%@",primaryKeyName];
+    NSMutableArray *dataList = [SharedLogIn sharedLogIn].logInList;
     
-    NSString *strSortID = [NSString stringWithFormat:@"_%@",strNameID];
-    NSSortDescriptor *sortDescriptor1 = [[NSSortDescriptor alloc] initWithKey:strSortID ascending:NO];
-    NSArray *sortDescriptors = [NSArray arrayWithObjects:sortDescriptor1, nil];
+    
+    NSSortDescriptor *sortDescriptor = [[NSSortDescriptor alloc] initWithKey:propertyName ascending:NO];
+    NSArray *sortDescriptors = [NSArray arrayWithObjects:sortDescriptor, nil];
     NSArray *sortArray = [dataList sortedArrayUsingDescriptors:sortDescriptors];
     dataList = [sortArray mutableCopy];
     
@@ -47,7 +46,7 @@
     }
     else
     {
-        id value = [dataList[0] valueForKey:strNameID];
+        id value = [dataList[0] valueForKey:primaryKeyName];
         NSString *strMaxID = value;
         
         return [strMaxID intValue]+1;

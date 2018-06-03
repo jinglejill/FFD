@@ -10,4 +10,12 @@
 
 @implementation IngredientCheckOver
 
+
++(NSMutableArray *)getIngredientCheckOverListWithAmountDiffLessThanZero:(NSMutableArray *)ingredientCheckOverList
+{
+    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"_amountDiff < 0"];
+    NSArray *filterArray = [ingredientCheckOverList filteredArrayUsingPredicate:predicate];
+    
+    return [filterArray mutableCopy];
+}
 @end

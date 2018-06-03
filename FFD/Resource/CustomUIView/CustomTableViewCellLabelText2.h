@@ -9,5 +9,8 @@
 #import <UIKit/UIKit.h>
 
 @interface CustomTableViewCellLabelText2 : UITableViewCell
-
+@property (strong, nonatomic) IBOutlet UILabel *lblTitle;
+@property (strong, nonatomic) IBOutlet UITextField *txtValue;
+@property (strong, nonatomic) IBOutlet UILabel *lblRemark;
+@property (strong, nonatomic) IBOutlet NSLayoutConstraint *lblRemarkHeight;
 @end

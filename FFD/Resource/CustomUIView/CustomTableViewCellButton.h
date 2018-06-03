@@ -9,5 +9,5 @@
 #import <UIKit/UIKit.h>
 
 @interface CustomTableViewCellButton : UITableViewCell
-
+@property (strong, nonatomic) IBOutlet UIButton *btnValue;
 @end

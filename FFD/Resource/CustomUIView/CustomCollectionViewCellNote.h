@@ -9,5 +9,8 @@
 #import <UIKit/UIKit.h>
 
 @interface CustomCollectionViewCellNote : UICollectionViewCell
+@property (strong, nonatomic) IBOutlet UIButton *btnCheckBox;
+@property (strong, nonatomic) IBOutlet UILabel *lblNoteName;
+@property (strong, nonatomic) IBOutlet UILabel *lblPrice;
 
 @end

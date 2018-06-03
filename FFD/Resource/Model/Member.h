@@ -15,12 +15,13 @@
 @property (retain, nonatomic) NSString * phoneNo;
 @property (retain, nonatomic) NSDate * birthDate;
 @property (retain, nonatomic) NSString * gender;
+@property (retain, nonatomic) NSDate * memberDate;
 @property (retain, nonatomic) NSString * modifiedUser;
 @property (retain, nonatomic) NSDate * modifiedDate;
 @property (nonatomic) NSInteger replaceSelf;
 @property (nonatomic) NSInteger idInserted;
-
--(Member *)initWithFullName:(NSString *)fullName nickname:(NSString *)nickname phoneNo:(NSString *)phoneNo birthDate:(NSDate *)birthDate gender:(NSString *)gender;
+-(Member *)init;
+-(Member *)initWithFullName:(NSString *)fullName nickname:(NSString *)nickname phoneNo:(NSString *)phoneNo birthDate:(NSDate *)birthDate gender:(NSString *)gender memberDate:(NSDate *)memberDate;
 +(NSInteger)getNextID;
 +(void)addObject:(Member *)member;
 +(void)removeObject:(Member *)member;

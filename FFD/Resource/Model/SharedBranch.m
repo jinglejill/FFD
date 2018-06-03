@@ -9,5 +9,15 @@
 #import "SharedBranch.h"
 
 @implementation SharedBranch
+@synthesize branchList;
 
++(SharedBranch *)sharedBranch {
+    static dispatch_once_t pred;
+    static SharedBranch *shared = nil;
+    dispatch_once(&pred, ^{
+        shared = [[SharedBranch alloc] init];
+        shared.branchList = [[NSMutableArray alloc]init];
+    });
+    return shared;
+}
 @end

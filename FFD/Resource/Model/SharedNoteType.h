@@ -9,5 +9,6 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedNoteType : NSObject
-
+@property (retain, nonatomic) NSMutableArray *noteTypeList;
++ (SharedNoteType *)sharedNoteType;
 @end

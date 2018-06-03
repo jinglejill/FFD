@@ -8,6 +8,10 @@
 
 #import <UIKit/UIKit.h>
 
-@interface CustomCollectionViewCellReceiptHistoryListHeader : UICollectionViewCell
+@interface CustomCollectionViewCellReceiptHistoryListHeader : UICollectionReusableView
+@property (strong, nonatomic) IBOutlet UILabel *lblDateTime;
+@property (strong, nonatomic) IBOutlet UILabel *lblReceiptNo;
+@property (strong, nonatomic) IBOutlet UILabel *lblTableName;
+@property (strong, nonatomic) IBOutlet UILabel *lblTotalAmount;
 
 @end

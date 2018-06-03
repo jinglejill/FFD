@@ -7,7 +7,15 @@
 //
 
 #import "CustomViewController.h"
+#import "ConfirmAndCancelView.h"
+#import "MenuViewController.h"
+#import "MenuType.h"
 
-@interface MenuTypeViewController : CustomViewController
+
+@interface MenuTypeViewController : CustomViewController<UITableViewDelegate,UITableViewDataSource,UITextFieldDelegate>
+@property (strong, nonatomic) MenuViewController *vc;
+@property (strong, nonatomic) MenuType *editMenuType;
+@property (strong, nonatomic) IBOutlet UITableView *tbvMenuType;
+@property (strong, nonatomic) ConfirmAndCancelView *vwConfirmAndCancel;
 
 @end

@@ -47,6 +47,7 @@ typedef NS_ENUM(NSInteger, PaperSizeIndex) {
 @property (strong, nonatomic) UIWindow *window;
 @property (strong, nonatomic) UIWindow *alertWindow;
 @property (nonatomic, strong) UINavigationController *navController;
+@property (nonatomic, strong) UIViewController *vc;
 
 
 + (NSString *)getPortName;

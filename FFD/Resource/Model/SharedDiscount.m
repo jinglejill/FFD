@@ -9,5 +9,15 @@
 #import "SharedDiscount.h"
 
 @implementation SharedDiscount
+@synthesize discountList;
 
++(SharedDiscount *)sharedDiscount {
+    static dispatch_once_t pred;
+    static SharedDiscount *shared = nil;
+    dispatch_once(&pred, ^{
+        shared = [[SharedDiscount alloc] init];
+        shared.discountList = [[NSMutableArray alloc]init];
+    });
+    return shared;
+}
 @end

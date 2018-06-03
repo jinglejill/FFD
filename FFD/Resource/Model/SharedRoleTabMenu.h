@@ -9,5 +9,7 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedRoleTabMenu : NSObject
+@property (retain, nonatomic) NSMutableArray *roleTabMenuList;
 
++ (SharedRoleTabMenu *)sharedRoleTabMenu;
 @end

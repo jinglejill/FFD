@@ -9,5 +9,7 @@
 #import <Foundation/Foundation.h>
 
 @interface SalesWeekly : NSObject
-
+@property (nonatomic) NSInteger weekNo;
+@property (retain, nonatomic) NSDate * salesDate;
+@property (nonatomic) float sales;
 @end

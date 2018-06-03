@@ -6,8 +6,8 @@
 //  Copyright © 2561 Appxelent. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
-@interface CustomCollectionViewCellBranchHeader : NSObject
+@interface CustomCollectionViewCellBranchHeader : UICollectionViewCell
 
 @end

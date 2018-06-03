@@ -9,5 +9,17 @@
 #import <Foundation/Foundation.h>
 
 @interface CredentialsDb : NSObject
+@property (nonatomic) NSInteger credentialsDbID;
+@property (nonatomic) NSInteger credentialsID;
+@property (retain, nonatomic) NSString * dbName;
+@property (retain, nonatomic) NSString * modifiedUser;
+@property (retain, nonatomic) NSDate * modifiedDate;
+@property (nonatomic) NSInteger replaceSelf;
+@property (nonatomic) NSInteger idInserted;
 
+@property (retain, nonatomic) NSString * name;
+@property (nonatomic) NSInteger branchID;
+
++(NSString *)getNameWithDbName:(NSString *)dbName credentialsDbList:(NSMutableArray *)credentialsDbList;
++(NSInteger)getSelectedIndexWithDbName:(NSString *)dbName credentialsDbList:(NSMutableArray *)credentialsDbList;
 @end

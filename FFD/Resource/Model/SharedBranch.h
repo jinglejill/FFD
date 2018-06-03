@@ -9,5 +9,7 @@
 #import <Foundation/Foundation.h>
 
 @interface SharedBranch : NSObject
+@property (retain, nonatomic) NSMutableArray *branchList;
 
++ (SharedBranch *)sharedBranch;
 @end

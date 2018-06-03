@@ -1,18 +1,22 @@
 //
-//  EmployeeLIstViewController.m
+//  EmployeeListViewController.m
 //  FFD
 //
 //  Created by Thidaporn Kijkamjai on 4/2/2561 BE.
 //  Copyright © 2561 Appxelent. All rights reserved.
 //
 
-#import "EmployeeLIstViewController.h"
+#import "EmployeeListViewController.h"
 
-@interface EmployeeLIstViewController ()
+@interface EmployeeListViewController ()
 
 @end
 
-@implementation EmployeeLIstViewController
+@implementation EmployeeListViewController
+- (IBAction)unwindToEmployeeList:(UIStoryboardSegue *)segue
+{
+    
+}
 
 - (void)viewDidLoad {
     [super viewDidLoad];

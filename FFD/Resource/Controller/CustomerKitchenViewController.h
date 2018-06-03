@@ -7,7 +7,29 @@
 //
 
 #import "CustomViewController.h"
+#import "CredentialsDb.h"
 
-@interface CustomerKitchenViewController : CustomViewController
+
+@interface CustomerKitchenViewController : CustomViewController<UITableViewDataSource,UITableViewDelegate,UIWebViewDelegate>
+- (IBAction)goBack:(id)sender;
+- (IBAction)selectList:(id)sender;
+- (IBAction)doAction:(id)sender;
+@property (strong, nonatomic) IBOutlet UIButton *btnAction;
+@property (strong, nonatomic) IBOutlet UIButton *btnSelect;
+@property (strong, nonatomic) IBOutlet UIButton *btnBack;
+@property (strong, nonatomic) IBOutlet UICollectionView *colVwOrder;
+@property (strong, nonatomic) IBOutlet UITableView *tbvData;
+@property (strong, nonatomic) CredentialsDb *credentialsDb;
+@property (strong, nonatomic) IBOutlet UISegmentedControl *segConPrintStatus;
+@property (strong, nonatomic) IBOutlet UIButton *btnConnectPrinter;
+@property (strong, nonatomic) IBOutlet UIImageView *imgPrinterStaus;
+@property (strong, nonatomic) IBOutlet UIButton *btnBadge;
+
+
+
+-(IBAction)unwindToCustomerKitchen:(UIStoryboardSegue *)segue;
+- (IBAction)printStatusChanged:(id)sender;
+- (IBAction)connectPrinter:(id)sender;
+-(void)setReceiptList;
 
 @end

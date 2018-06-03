@@ -9,5 +9,22 @@
 #import <Foundation/Foundation.h>
 
 @interface ReceiptPrint : NSObject
+@property (nonatomic) NSInteger receiptPrintID;
+@property (nonatomic) NSInteger receiptID;
+@property (retain, nonatomic) NSString * modifiedUser;
+@property (retain, nonatomic) NSDate * modifiedDate;
+@property (nonatomic) NSInteger replaceSelf;
+@property (nonatomic) NSInteger idInserted;
+
+-(ReceiptPrint *)initWithReceiptID:(NSInteger)receiptID;
++(NSInteger)getNextID;
++(void)addObject:(ReceiptPrint *)receiptPrint;
++(void)removeObject:(ReceiptPrint *)receiptPrint;
++(void)addList:(NSMutableArray *)receiptPrintList;
++(void)removeList:(NSMutableArray *)receiptPrintList;
++(ReceiptPrint *)getReceiptPrint:(NSInteger)receiptPrintID;
+-(BOOL)editReceiptPrint:(ReceiptPrint *)editingReceiptPrint;
++(ReceiptPrint *)copyFrom:(ReceiptPrint *)fromReceiptPrint to:(ReceiptPrint *)toReceiptPrint;
++(ReceiptPrint *)getReceiptPrintWithReceiptID:(NSInteger)receiptID;
 
 @end

@@ -7,7 +7,15 @@
 //
 
 #import "CustomViewController.h"
+#import "Receipt.h"
+#import "CustomerTable.h"
 
-@interface SelectCustomerTableToMoveViewController : CustomViewController
-
+@interface SelectCustomerTableToMoveViewController : CustomViewController<UICollectionViewDataSource,UICollectionViewDelegate,UICollectionViewDelegateFlowLayout>
+@property (strong, nonatomic) Receipt *selectedReceipt;
+@property (strong, nonatomic) CustomerTable *selectedCustomerTable;
+@property (strong, nonatomic) NSMutableArray *selectedOrderTakingList;
+@property (nonatomic) BOOL moveOrder;
+@property (nonatomic) BOOL needSeparateOrder;
+@property (strong, nonatomic) IBOutlet UICollectionView *colVwCustomerTable;
+- (IBAction)goBack:(id)sender;
 @end

@@ -9,5 +9,22 @@
 #import <Foundation/Foundation.h>
 
 @interface Setting : NSObject
+@property (nonatomic) NSInteger settingID;
+@property (retain, nonatomic) NSString * keyName;
+@property (retain, nonatomic) NSString * value;
+@property (retain, nonatomic) NSString * modifiedUser;
+@property (retain, nonatomic) NSDate * modifiedDate;
+@property (nonatomic) NSInteger replaceSelf;
+@property (nonatomic) NSInteger idInserted;
 
+-(Setting *)initWithKeyName:(NSString *)keyName value:(NSString *)value;
++(NSInteger)getNextID;
++(void)addObject:(Setting *)setting;
++(void)removeObject:(Setting *)setting;
++(void)addList:(NSMutableArray *)settingList;
++(void)removeList:(NSMutableArray *)settingList;
++(Setting *)getSetting:(NSInteger)settingID;
++(NSString *)getSettingValueWithKeyName:(NSString *)keyName;
++(Setting *)getSettingWithKeyName:(NSString *)keyName;
++(BOOL)isDeleteOrderPasswordValid:(NSString *)password;
 @end

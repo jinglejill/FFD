@@ -7,7 +7,21 @@
 //
 
 #import "CustomViewController.h"
+#import "ConfirmAndCancelView.h"
+#import "IngredientSetUpViewController.h"
+#import "Ingredient.h"
+#import "IngredientType.h"
+#import "SubIngredientType.h"
 
-@interface IngredientViewController : CustomViewController
+
+@interface IngredientViewController : CustomViewController<UITableViewDelegate,UITableViewDataSource,UITextFieldDelegate>
+@property (strong, nonatomic) IngredientSetUpViewController *vc;
+@property (strong, nonatomic) Ingredient *editIngredient;
+@property (strong, nonatomic) IngredientType *editIngredientType;
+@property (strong, nonatomic) SubIngredientType *editSubIngredientType;
+@property (strong, nonatomic) ConfirmAndCancelView *vwConfirmAndCancel;
+
+
+@property (strong, nonatomic) IBOutlet UITableView *tbvIngredient;
 
 @end

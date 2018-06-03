@@ -9,5 +9,15 @@
 #import "SharedMoneyCheck.h"
 
 @implementation SharedMoneyCheck
+@synthesize moneyCheckList;
 
++(SharedMoneyCheck *)sharedMoneyCheck {
+    static dispatch_once_t pred;
+    static SharedMoneyCheck *shared = nil;
+    dispatch_once(&pred, ^{
+        shared = [[SharedMoneyCheck alloc] init];
+        shared.moneyCheckList = [[NSMutableArray alloc]init];
+    });
+    return shared;
+}
 @end

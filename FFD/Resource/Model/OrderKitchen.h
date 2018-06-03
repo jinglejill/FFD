@@ -13,17 +13,30 @@
 @property (nonatomic) NSInteger customerTableID;
 @property (nonatomic) NSInteger orderTakingID;
 @property (nonatomic) NSInteger sequenceNo;
+@property (nonatomic) NSInteger customerTableIDOrder;
 @property (retain, nonatomic) NSString * modifiedUser;
 @property (retain, nonatomic) NSDate * modifiedDate;
 @property (nonatomic) NSInteger replaceSelf;
 @property (nonatomic) NSInteger idInserted;
 
--(OrderKitchen *)initWithCustomerTableID:(NSInteger)customerTableID orderTakingID:(NSInteger)orderTakingID sequenceNo:(NSInteger)sequenceNo;
+
+@property (nonatomic) NSInteger quantity;
+
+
+-(OrderKitchen *)initWithCustomerTableID:(NSInteger)customerTableID orderTakingID:(NSInteger)orderTakingID sequenceNo:(NSInteger)sequenceNo customerTableIDOrder:(NSInteger)customerTableIDOrder;
 +(NSInteger)getNextID;
 +(void)addObject:(OrderKitchen *)orderKitchen;
++(void)addList:(NSMutableArray *)orderKitchenList;
 +(void)removeObject:(OrderKitchen *)orderKitchen;
++(void)removeList:(NSMutableArray *)orderTakingList;
 +(OrderKitchen *)getOrderKitchen:(NSInteger)orderKitchenID;
-+(NSInteger)getNextSequenceNo;
-
-
++(NSInteger)getNextSequenceNoWithCustomerTableID:(NSInteger)customerTableID status:(NSInteger)status;
++(NSMutableArray *)getOrderKitchenListWithCustomerTableID:(NSInteger)customerTableID status:(NSInteger)status;
++(NSMutableArray *)getOrderKitchenListWithSequenceNo:(NSInteger)sequenceNo orderKitchenList:(NSMutableArray *)orderKitchenList;
++(OrderKitchen *)getOrderKitchenWithOrderTakingID:(NSInteger)orderTakingID;
++(NSMutableArray *)getOrderKitchenListWithMenuTypeID:(NSInteger)menuTypeID orderKitchenList:(NSMutableArray *)orderKitchenList;
++(NSMutableArray *)getOrderKitchenListWithOrderTakingList:(NSMutableArray *)orderTakingList;
++(NSMutableArray *)getOrderKitchenListWithNoCustomerTableIDOrder:(NSMutableArray *)orderKitchenList;
++(NSMutableArray *)getOrderKitchenListWithHaveCustomerTableIDOrder:(NSMutableArray *)orderKitchenList;
++(NSMutableArray *)getOrderKitchenListWithCustomerTableOrderID:(NSInteger)customerTableIDOrder orderKitchenList:(NSMutableArray *)orderKitchenList;
 @end
