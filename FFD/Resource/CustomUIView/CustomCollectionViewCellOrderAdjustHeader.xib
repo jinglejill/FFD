@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="12121" systemVersion="16F73" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES">
+    <device id="retina4_7" orientation="portrait">
+        <adaptation id="fullscreen"/>
+    </device>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="12089"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view contentMode="scaleToFill" id="iN0-l3-epB" customClass="CustomCollectionViewCellOrderAdjustHeader">
+            <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            <subviews>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="รายการอาหาร" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ig1-62-9C1">
+                    <rect key="frame" x="16" y="323" width="83" height="21"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="21" id="F4c-e8-kIp"/>
+                        <constraint firstAttribute="width" constant="83" id="dTg-U8-Kk0"/>
+                    </constraints>
+                    <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="14"/>
+                    <nil key="textColor"/>
+                    <nil key="highlightedColor"/>
+                </label>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="จำนวน" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ctl-YP-8EO">
+                    <rect key="frame" x="233" y="325" width="42" height="17"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="17" id="E3j-Kr-OA1"/>
+                        <constraint firstAttribute="width" constant="42" id="lAy-rR-Fdj"/>
+                    </constraints>
+                    <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="14"/>
+                    <nil key="textColor"/>
+                    <nil key="highlightedColor"/>
+                </label>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="soc-JU-B7T">
+                    <rect key="frame" x="0.0" y="666" width="375" height="1"/>
+                    <color key="backgroundColor" white="0.0" alpha="1" colorSpace="calibratedWhite"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="1" id="ifi-La-ke1"/>
+                    </constraints>
+                </view>
+            </subviews>
+            <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <constraints>
+                <constraint firstAttribute="trailing" secondItem="ctl-YP-8EO" secondAttribute="trailing" constant="100" id="02v-zh-cO6"/>
+                <constraint firstItem="ctl-YP-8EO" firstAttribute="centerY" secondItem="iN0-l3-epB" secondAttribute="centerY" id="1cq-fy-D6V"/>
+                <constraint firstItem="ig1-62-9C1" firstAttribute="centerY" secondItem="iN0-l3-epB" secondAttribute="centerY" id="GHs-tA-mNE"/>
+                <constraint firstItem="ig1-62-9C1" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" constant="16" id="Jsg-I1-aLe"/>
+                <constraint firstAttribute="bottom" secondItem="soc-JU-B7T" secondAttribute="bottom" id="SlW-ia-vKe"/>
+                <constraint firstItem="soc-JU-B7T" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" id="fcR-7f-9nN"/>
+                <constraint firstAttribute="trailing" secondItem="soc-JU-B7T" secondAttribute="trailing" id="ufe-YR-tKp"/>
+            </constraints>
+            <connections>
+                <outlet property="lblQuantityHeader" destination="ctl-YP-8EO" id="CC1-sv-IQ1"/>
+            </connections>
+            <point key="canvasLocation" x="79.5" y="54.5"/>
+        </view>
+    </objects>
+</document>

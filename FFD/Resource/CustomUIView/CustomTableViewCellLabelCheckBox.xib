@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="13771" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES">
+    <device id="retina4_7" orientation="portrait">
+        <adaptation id="fullscreen"/>
+    </device>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="13772"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view contentMode="scaleToFill" id="iN0-l3-epB" customClass="CustomTableViewCellLabelCheckBox">
+            <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            <subviews>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="ที่อยู่หลัก" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="qhv-ja-Vwr">
+                    <rect key="frame" x="16" y="11" width="320" height="17"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="17" id="vC5-5G-nYw"/>
+                    </constraints>
+                    <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="14"/>
+                    <color key="textColor" red="0.33333333333333331" green="0.33333333333333331" blue="0.33333333333333331" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                    <nil key="highlightedColor"/>
+                </label>
+                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ZwF-O4-44d">
+                    <rect key="frame" x="344" y="12" width="15" height="15"/>
+                    <constraints>
+                        <constraint firstAttribute="width" constant="15" id="eJ2-Sa-JAz"/>
+                        <constraint firstAttribute="height" constant="15" id="ubZ-Lz-Pgg"/>
+                    </constraints>
+                    <state key="normal" image="checkbox.png"/>
+                </button>
+            </subviews>
+            <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <constraints>
+                <constraint firstItem="qhv-ja-Vwr" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" constant="11" id="4T5-gJ-lqU"/>
+                <constraint firstItem="ZwF-O4-44d" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" constant="12" id="g2o-2b-kv3"/>
+                <constraint firstItem="ZwF-O4-44d" firstAttribute="leading" secondItem="qhv-ja-Vwr" secondAttribute="trailing" constant="8" id="nuZ-lH-aEr"/>
+                <constraint firstAttribute="trailing" secondItem="ZwF-O4-44d" secondAttribute="trailing" constant="16" id="oYZ-Hx-kMT"/>
+                <constraint firstItem="qhv-ja-Vwr" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" constant="16" id="xPR-1u-BVS"/>
+            </constraints>
+            <connections>
+                <outlet property="btnValue" destination="ZwF-O4-44d" id="bXz-iH-qsi"/>
+                <outlet property="lblTitle" destination="qhv-ja-Vwr" id="Xcd-A6-GEO"/>
+            </connections>
+            <point key="canvasLocation" x="69" y="62"/>
+        </view>
+    </objects>
+    <resources>
+        <image name="checkbox.png" width="21" height="21"/>
+    </resources>
+</document>
